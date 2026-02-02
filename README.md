@@ -19,4 +19,4 @@ The application supports multiple user roles and focuses on a clean, professiona
 - Member 1: Vinith Reddy Vazrala
 - Member 2: Eshwar Akki
 - Member 3: Khyathi Vardhan Ravella
-- Member 4: Rakesh Kumar Reddy
+- Member 4: Rakesh Kumar Reddy Dodda
