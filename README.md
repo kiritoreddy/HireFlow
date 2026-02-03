@@ -17,7 +17,7 @@ The application supports multiple user roles and focuses on a clean, professiona
 
 ## Team Members
 - Member 1: Vinith Reddy Vazrala (Front-End)
-- Member 2: Eshwar Akki (Back-End)
+- Member 2: Eshwar Akki (Back-End) 
 - Member 3: Khyathi Vardhan Ravella (Front-End)
 - Member 4: Rakesh Kumar Reddy Dodda (Back-End)
 
