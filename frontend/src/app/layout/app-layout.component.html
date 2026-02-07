@@ -1,0 +1,18 @@
+<div class="app-layout">
+  <header class="app-header">
+    <mat-toolbar>
+      <a mat-button routerLink="/" class="app-logo">HireFlow</a>
+      <span class="app-toolbar-spacer"></span>
+      <nav class="app-nav">
+        <a mat-button routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+          Dashboard
+        </a>
+        <a mat-button routerLink="/candidates" routerLinkActive="active">Candidates</a>
+        <a mat-button routerLink="/jobs" routerLinkActive="active">Jobs</a>
+      </nav>
+    </mat-toolbar>
+  </header>
+  <main class="app-main">
+    <router-outlet />
+  </main>
+</div>
