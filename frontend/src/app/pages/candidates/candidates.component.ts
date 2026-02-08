@@ -10,10 +10,17 @@ import { AgGridModule } from 'ag-grid-angular';
 })
 export class CandidatesComponent {
   columnDefs = [
-    { field: 'name' },
-    { field: 'email' },
-    { field: 'stage' },
-  ];
+  { field: 'name' },
+  { field: 'email' },
+  {
+    field: 'stage',
+    editable: true,
+    cellEditor: 'agSelectCellEditor',
+    cellEditorParams: {
+      values: ['Applied', 'Interview', 'Selected', 'Rejected'],
+    },
+  },
+];
 
   rowData = [
     { name: 'John Doe', email: 'john@test.com', stage: 'Applied' },
