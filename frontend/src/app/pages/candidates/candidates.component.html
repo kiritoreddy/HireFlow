@@ -1,2 +1,9 @@
 <h1>Candidates</h1>
-    <p>Candidate list will go here.</p> 
+
+<div class="ag-theme-alpine" style="height: 400px; width: 100%;">
+  <ag-grid-angular
+    style="width: 100%; height: 100%;"
+    [columnDefs]="columnDefs"
+    [rowData]="rowData">
+  </ag-grid-angular>
+</div>

@@ -1,14 +1,22 @@
 import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { AgGridModule } from 'ag-grid-angular';
 
 @Component({
   selector: 'app-candidates',
   standalone: true,
+  imports: [CommonModule, AgGridModule],
   templateUrl: './candidates.component.html',
-  styles: [
-    `
-      h1 { margin: 0 0 0.5rem 0; font-size: 1.75rem; }
-      p { margin: 0; color: rgba(0, 0, 0, 0.7); }
-    `,
-  ],
 })
-export class CandidatesComponent {}
+export class CandidatesComponent {
+  columnDefs = [
+    { field: 'name' },
+    { field: 'email' },
+    { field: 'stage' },
+  ];
+
+  rowData = [
+    { name: 'John Doe', email: 'john@test.com', stage: 'Applied' },
+    { name: 'Jane Smith', email: 'jane@test.com', stage: 'Interview' },
+  ];
+}
