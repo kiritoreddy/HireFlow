@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/gorilla/handlers" // ← ADDED
 	"github.com/gorilla/mux"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -13,7 +14,7 @@ var db *gorm.DB
 
 // Simple model (starter)
 type User struct {
-	ID    uint   `gorm:"primaryKey"`
+	ID    uint `gorm:"primaryKey"`
 	Name  string
 	Email string `gorm:"unique"`
 }
@@ -28,15 +29,22 @@ func main() {
 
 	// Auto-migrate schema
 	if err := db.AutoMigrate(&User{}); err != nil {
-	log.Fatal("failed to migrate database")
+		log.Fatal("failed to migrate database")
 	}
+
 	// Setup router
 	router := mux.NewRouter()
-
 	router.HandleFunc("/health", healthHandler).Methods("GET")
 
+	// Configure CORS for frontend access    // ← ADDED SECTION
+	corsHandler := handlers.CORS(
+		handlers.AllowedOrigins([]string{"http://localhost:4200"}),
+		handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}),
+		handlers.AllowedHeaders([]string{"Content-Type", "Authorization"}),
+	)
+
 	log.Println("HireFlow backend running on http://localhost:8080")
-	log.Fatal(http.ListenAndServe(":8080", router))
+	log.Fatal(http.ListenAndServe(":8080", corsHandler(router))) // ← MODIFIED
 }
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {
