@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"time" // ← ADDED: Required for CreatedAt/UpdatedAt timestamp fields in Job model
 
+	"github.com/glebarez/sqlite" // Pure Go SQLite driver (no CGO required)
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
@@ -41,8 +41,8 @@ func main() {
 	}
 	db = database
 
-	// Auto-migrate schema
-	if err := db.AutoMigrate(&User{}); err != nil {
+	// Auto-migrate schema (creates/updates database tables based on models)
+	if err := db.AutoMigrate(&User{}, &Job{}); err != nil { // ← MODIFIED: Added &Job{} for jobs table creation
 		log.Fatal("failed to migrate database")
 	}
 
