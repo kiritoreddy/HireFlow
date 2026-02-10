@@ -21,4 +21,3 @@ The application supports multiple user roles and focuses on a clean, professiona
 - Member 3: Khyathi Vardhan Ravella (Front-End)
 - Member 4: Rakesh Kumar Reddy Dodda (Back-End)
 
-
