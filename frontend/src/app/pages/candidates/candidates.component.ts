@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AgGridModule } from 'ag-grid-angular';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { AddCandidateDialogComponent } from './add-candidate-dialog.component';
 
 @Component({
   selector: 'app-candidates',
@@ -12,6 +13,8 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 export class CandidatesComponent {
 
   constructor(private dialog: MatDialog) {}
+
+  gridApi: any;
 
   columnDefs = [
     { field: 'name' },
@@ -32,8 +35,20 @@ export class CandidatesComponent {
     { name: 'Jane Smith', email: 'jane@test.com', stage: 'Interview' },
   ];
 
+  onGridReady(params: any) {
+    this.gridApi = params.api;
+  }
+
   openAddCandidateDialog() {
-    // dialog will be wired in the next step
-    console.log('Add Candidate clicked');
+    const dialogRef = this.dialog.open(AddCandidateDialogComponent, {
+      width: '400px',
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result && this.gridApi) {
+        this.rowData = [...this.rowData, result];
+        this.gridApi.setRowData(this.rowData);
+      }
+    });
   }
 }
