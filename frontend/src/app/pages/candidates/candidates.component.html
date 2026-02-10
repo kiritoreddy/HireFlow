@@ -1,4 +1,22 @@
-<h1>Candidates</h1>
+<div
+  style="
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  "
+>
+  <h1 style="margin: 0;">Candidates</h1>
+
+  <button
+    mat-raised-button
+    color="primary"
+    style="padding: 10px 24px; font-size: 16px;"
+    (click)="openAddCandidateDialog()"
+  >
+    Add Candidate
+  </button>
+</div>
 
 <div class="ag-theme-alpine" style="height: 400px; width: 100%;">
   <ag-grid-angular
