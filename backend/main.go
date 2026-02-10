@@ -50,8 +50,9 @@ func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/health", healthHandler).Methods("GET")
 
-	// ← ADDED: Register Create Job API endpoint (BE-1: Implement Job CRUD APIs)
-	router.HandleFunc("/jobs", createJobHandler).Methods("POST")
+	// Job CRUD API endpoints (BE-1: Implement Job CRUD APIs)
+	router.HandleFunc("/jobs", createJobHandler).Methods("POST") // ← ADDED Commit 4: Create job endpoint
+	router.HandleFunc("/jobs", getAllJobsHandler).Methods("GET") // ← ADDED Commit 5: Get all jobs endpoint
 
 	// Configure CORS for frontend access (allows Angular frontend on port 4200 to call backend APIs)
 	corsHandler := handlers.CORS(
@@ -70,7 +71,7 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{"status":"ok","db":"sqlite","service":"hireflow-backend"}`))
 }
 
-// ← ADDED: Create Job API handler (POST /jobs)
+// Create Job API handler (POST /jobs) - Added in Commit 4
 // Accepts JSON job data, creates new job in database, returns created job with ID and timestamps
 func createJobHandler(w http.ResponseWriter, r *http.Request) {
 	var job Job
@@ -95,4 +96,23 @@ func createJobHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated) // 201 status code indicates successful resource creation
 	json.NewEncoder(w).Encode(job)    // Returns job with auto-generated ID and timestamps
+}
+
+// Get All Jobs API handler (GET /jobs) - Added in Commit 5
+// Retrieves all job postings from database and returns as JSON array
+func getAllJobsHandler(w http.ResponseWriter, r *http.Request) {
+	var jobs []Job
+
+	// Retrieve all jobs from database using GORM Find
+	if err := db.Find(&jobs).Error; err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError) // 500 error if database query fails
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to retrieve jobs"})
+		return
+	}
+
+	// Return jobs array as JSON with 200 OK status (returns empty array [] if no jobs exist)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(jobs)
 }
