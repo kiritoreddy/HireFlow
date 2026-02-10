@@ -4,6 +4,7 @@ import (
 	"encoding/json" // ← ADDED: Required for encoding/decoding JSON request/response
 	"log"
 	"net/http"
+	"strconv" // ← ADDED Commit 6: Required for converting URL string ID to integer
 	"time"
 
 	"github.com/glebarez/sqlite" // Pure Go SQLite driver (no CGO required)
@@ -51,8 +52,9 @@ func main() {
 	router.HandleFunc("/health", healthHandler).Methods("GET")
 
 	// Job CRUD API endpoints (BE-1: Implement Job CRUD APIs)
-	router.HandleFunc("/jobs", createJobHandler).Methods("POST") // ← ADDED Commit 4: Create job endpoint
-	router.HandleFunc("/jobs", getAllJobsHandler).Methods("GET") // ← ADDED Commit 5: Get all jobs endpoint
+	router.HandleFunc("/jobs", createJobHandler).Methods("POST")      // ← ADDED Commit 4: Create job endpoint
+	router.HandleFunc("/jobs", getAllJobsHandler).Methods("GET")      // ← ADDED Commit 5: Get all jobs endpoint
+	router.HandleFunc("/jobs/{id}", getJobByIDHandler).Methods("GET") // ← ADDED Commit 6: Get job by ID endpoint
 
 	// Configure CORS for frontend access (allows Angular frontend on port 4200 to call backend APIs)
 	corsHandler := handlers.CORS(
@@ -115,4 +117,40 @@ func getAllJobsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(jobs)
+}
+
+// Get Job by ID API handler (GET /jobs/{id}) - Added in Commit 6
+// Retrieves a specific job posting by ID from database, used for Job Create/Edit form [1]
+func getJobByIDHandler(w http.ResponseWriter, r *http.Request) {
+	// Extract job ID from URL path parameters using Gorilla Mux
+	vars := mux.Vars(r)
+	idStr := vars["id"]
+
+	// Convert string ID to unsigned integer
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest) // 400 error if ID is not a valid number
+		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid job ID"})
+		return
+	}
+
+	var job Job
+	// Retrieve job from database by ID using GORM First (returns error if not found)
+	if err := db.First(&job, uint(id)).Error; err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		if err == gorm.ErrRecordNotFound {
+			w.WriteHeader(http.StatusNotFound) // 404 error if job doesn't exist
+			json.NewEncoder(w).Encode(map[string]string{"error": "Job not found"})
+		} else {
+			w.WriteHeader(http.StatusInternalServerError) // 500 error for other database errors
+			json.NewEncoder(w).Encode(map[string]string{"error": "Failed to retrieve job"})
+		}
+		return
+	}
+
+	// Return job as JSON with 200 OK status
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(job)
 }
