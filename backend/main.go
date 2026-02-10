@@ -1,9 +1,10 @@
 package main
 
 import (
+	"encoding/json" // ← ADDED: Required for encoding/decoding JSON request/response
 	"log"
 	"net/http"
-	"time" // ← ADDED: Required for CreatedAt/UpdatedAt timestamp fields in Job model
+	"time"
 
 	"github.com/glebarez/sqlite" // Pure Go SQLite driver (no CGO required)
 	"github.com/gorilla/handlers"
@@ -20,17 +21,16 @@ type User struct {
 	Email string `gorm:"unique"`
 }
 
-// ← ADDED: Job model for HireFlow ATS job postings (BE-1 requirement)
-// This struct defines the database schema and JSON structure for job postings
+// Job model for HireFlow ATS job postings (BE-1 requirement)
 type Job struct {
-	ID          uint      `gorm:"primaryKey" json:"id"`         // Auto-incrementing unique identifier
-	Title       string    `gorm:"not null" json:"title"`        // Job title (required field, e.g., "Senior Software Engineer")
-	Description string    `json:"description"`                  // Job responsibilities and requirements
-	Department  string    `json:"department"`                   // Department name (e.g., "Engineering", "Sales")
-	Location    string    `json:"location"`                     // Job location (e.g., "Remote", "New York")
-	Status      string    `gorm:"default:'Open'" json:"status"` // Job posting status (defaults to "Open")
-	CreatedAt   time.Time `json:"created_at"`                   // Timestamp when job was created (auto-managed by GORM)
-	UpdatedAt   time.Time `json:"updated_at"`                   // Timestamp when job was last updated (auto-managed by GORM)
+	ID          uint      `gorm:"primaryKey" json:"id"`
+	Title       string    `gorm:"not null" json:"title"`
+	Description string    `json:"description"`
+	Department  string    `json:"department"`
+	Location    string    `json:"location"`
+	Status      string    `gorm:"default:'Open'" json:"status"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 func main() {
@@ -42,13 +42,16 @@ func main() {
 	db = database
 
 	// Auto-migrate schema (creates/updates database tables based on models)
-	if err := db.AutoMigrate(&User{}, &Job{}); err != nil { // ← MODIFIED: Added &Job{} for jobs table creation
+	if err := db.AutoMigrate(&User{}, &Job{}); err != nil {
 		log.Fatal("failed to migrate database")
 	}
 
 	// Setup router
 	router := mux.NewRouter()
 	router.HandleFunc("/health", healthHandler).Methods("GET")
+
+	// ← ADDED: Register Create Job API endpoint (BE-1: Implement Job CRUD APIs)
+	router.HandleFunc("/jobs", createJobHandler).Methods("POST")
 
 	// Configure CORS for frontend access (allows Angular frontend on port 4200 to call backend APIs)
 	corsHandler := handlers.CORS(
@@ -65,4 +68,31 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"status":"ok","db":"sqlite","service":"hireflow-backend"}`))
+}
+
+// ← ADDED: Create Job API handler (POST /jobs)
+// Accepts JSON job data, creates new job in database, returns created job with ID and timestamps
+func createJobHandler(w http.ResponseWriter, r *http.Request) {
+	var job Job
+
+	// Decode JSON request body into Job struct
+	if err := json.NewDecoder(r.Body).Decode(&job); err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest) // 400 error if JSON is invalid
+		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid request body"})
+		return
+	}
+
+	// Create job record in database (GORM auto-generates ID, CreatedAt, UpdatedAt, and default Status)
+	if err := db.Create(&job).Error; err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError) // 500 error if database operation fails
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to create job"})
+		return
+	}
+
+	// Return created job as JSON with 201 Created status
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated) // 201 status code indicates successful resource creation
+	json.NewEncoder(w).Encode(job)    // Returns job with auto-generated ID and timestamps
 }
