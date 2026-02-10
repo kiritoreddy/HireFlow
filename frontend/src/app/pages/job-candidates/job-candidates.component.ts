@@ -2,23 +2,27 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AgGridModule } from 'ag-grid-angular';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatButtonModule } from '@angular/material/button';
 import { AddCandidateDialogComponent } from './add-candidate-dialog.component';
 
 @Component({
-  selector: 'app-candidates',
+  selector: 'app-job-candidates',
   standalone: true,
-  imports: [CommonModule, AgGridModule, MatDialogModule],
-  templateUrl: './candidates.component.html',
+  imports: [
+    CommonModule,
+    AgGridModule,
+    MatDialogModule,
+    MatButtonModule,
+  ],
+  templateUrl: './job-candidates.component.html',
 })
-export class CandidatesComponent {
-
+export class JobCandidatesComponent {
   constructor(private dialog: MatDialog) {}
-
-  gridApi: any;
 
   columnDefs = [
     { field: 'name' },
     { field: 'email' },
+    { field: 'resume' },
     {
       field: 'stage',
       editable: true,
@@ -30,24 +34,24 @@ export class CandidatesComponent {
     },
   ];
 
-  rowData = [
-    { name: 'John Doe', email: 'john@test.com', stage: 'Applied' },
-    { name: 'Jane Smith', email: 'jane@test.com', stage: 'Interview' },
+  rowData: any[] = [
+    {
+      name: 'Harper Moore',
+      email: 'harper@email.com',
+      resume: 'Harper_Moore_Resume.pdf',
+      stage: 'Applied',
+    },
   ];
-
-  onGridReady(params: any) {
-    this.gridApi = params.api;
-  }
 
   openAddCandidateDialog() {
     const dialogRef = this.dialog.open(AddCandidateDialogComponent, {
-      width: '400px',
+      width: '450px',
+      disableClose: true,
     });
 
     dialogRef.afterClosed().subscribe((result) => {
-      if (result && this.gridApi) {
+      if (result) {
         this.rowData = [...this.rowData, result];
-        this.gridApi.setRowData(this.rowData);
       }
     });
   }
