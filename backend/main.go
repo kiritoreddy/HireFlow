@@ -51,11 +51,12 @@ func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/health", healthHandler).Methods("GET")
 
-	// Job CRUD API endpoints (BE-1: Implement Job CRUD APIs)
-	router.HandleFunc("/jobs", createJobHandler).Methods("POST")      // ← ADDED Commit 4: Create job endpoint
-	router.HandleFunc("/jobs", getAllJobsHandler).Methods("GET")      // ← ADDED Commit 5: Get all jobs endpoint
-	router.HandleFunc("/jobs/{id}", getJobByIDHandler).Methods("GET") // ← ADDED Commit 6: Get job by ID endpoint
-	router.HandleFunc("/jobs/{id}", updateJobHandler).Methods("PUT")  // ← ADDED Commit 7: Update job endpoint
+	// Job CRUD API endpoints (BE-1: Implement Job CRUD APIs) [1]
+	router.HandleFunc("/jobs", createJobHandler).Methods("POST")        // ← ADDED Commit 4: Create job endpoint
+	router.HandleFunc("/jobs", getAllJobsHandler).Methods("GET")        // ← ADDED Commit 5: Get all jobs endpoint
+	router.HandleFunc("/jobs/{id}", getJobByIDHandler).Methods("GET")   // ← ADDED Commit 6: Get job by ID endpoint
+	router.HandleFunc("/jobs/{id}", updateJobHandler).Methods("PUT")    // ← ADDED Commit 7: Update job endpoint
+	router.HandleFunc("/jobs/{id}", deleteJobHandler).Methods("DELETE") // ← ADDED Commit 8: Delete job endpoint (completes CRUD)
 
 	// Configure CORS for frontend access (allows Angular frontend on port 4200 to call backend APIs)
 	corsHandler := handlers.CORS(
@@ -210,4 +211,46 @@ func updateJobHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(updatedJob) // Returns job with updated fields and UpdatedAt timestamp
+}
+
+// Delete Job API handler (DELETE /jobs/{id}) - Added in Commit 8
+// Removes a job posting from database, used for closing/removing obsolete job postings from HireFlow ATS [1]
+func deleteJobHandler(w http.ResponseWriter, r *http.Request) {
+	// Extract job ID from URL path parameters using Gorilla Mux
+	vars := mux.Vars(r)
+	idStr := vars["id"]
+
+	// Convert string ID to unsigned integer
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest) // 400 error if ID is not a valid number
+		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid job ID"})
+		return
+	}
+
+	// Check if job exists in database before attempting deletion
+	var job Job
+	if err := db.First(&job, uint(id)).Error; err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		if err == gorm.ErrRecordNotFound {
+			w.WriteHeader(http.StatusNotFound) // 404 error if job doesn't exist
+			json.NewEncoder(w).Encode(map[string]string{"error": "Job not found"})
+		} else {
+			w.WriteHeader(http.StatusInternalServerError) // 500 error for other database errors
+			json.NewEncoder(w).Encode(map[string]string{"error": "Failed to retrieve job"})
+		}
+		return
+	}
+
+	// Delete job record from database using GORM Delete
+	if err := db.Delete(&job).Error; err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError) // 500 error if database deletion fails
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to delete job"})
+		return
+	}
+
+	// Return 204 No Content status (successful deletion with no response body)
+	w.WriteHeader(http.StatusNoContent)
 }
