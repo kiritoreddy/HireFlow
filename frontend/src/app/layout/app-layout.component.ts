@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
+import { AuthService } from '../core/auth/auth.service';
 
 @Component({
   selector: 'app-layout',
@@ -10,4 +11,10 @@ import { MatButtonModule } from '@angular/material/button';
   templateUrl: './app-layout.component.html',
   styleUrl: './app-layout.component.scss',
 })
-export class AppLayoutComponent {}
+export class AppLayoutComponent {
+  constructor(private auth: AuthService) {}
+
+  logout(): void {
+    this.auth.logout();
+  }
+}
