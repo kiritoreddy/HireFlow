@@ -7,7 +7,7 @@ import (
 	"log"
 	"net/http"
 )
- 
+
 func main() {
 	// Initialize database connection
 	db := config.InitDB()
