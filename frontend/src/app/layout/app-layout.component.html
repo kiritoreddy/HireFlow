@@ -1,19 +1,22 @@
 <div class="app-layout">
   <header class="app-header">
-    <mat-toolbar>
-      <a mat-button routerLink="/" class="app-logo">HireFlow</a>
-      <span class="app-toolbar-spacer"></span>
-      <nav class="app-nav">
-        <a mat-button routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-          Dashboard
-        </a>
-        <a mat-button routerLink="/candidates" routerLinkActive="active">Candidates</a>
-        <a mat-button routerLink="/jobs" routerLinkActive="active">Jobs</a>
-        <button mat-button (click)="logout()">Logout</button>
-      </nav>
-    </mat-toolbar>
+    <a mat-button routerLink="/" class="app-logo">HireFlow</a>
+    <span class="app-header-spacer"></span>
+    <button mat-icon-button class="profile-icon" aria-label="Profile">
+      <mat-icon>account_circle</mat-icon>
+    </button>
   </header>
-  <main class="app-main">
-    <router-outlet />
-  </main>
+  <div class="app-body">
+    <nav class="app-sidebar">
+      <a mat-button routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+        Dashboard
+      </a>
+      <a mat-button routerLink="/candidates" routerLinkActive="active">Candidates</a>
+      <a mat-button routerLink="/jobs" routerLinkActive="active">Jobs</a>
+      <button mat-button (click)="logout()" class="logout-btn">Logout</button>
+    </nav>
+    <main class="app-main">
+      <router-outlet />
+    </main>
+  </div>
 </div>
