@@ -13,7 +13,12 @@ func main() {
 	db := config.InitDB()
 
 	// Auto-migrate database schema
-	if err := db.AutoMigrate(&models.User{}, &models.Job{}); err != nil {
+	if err := db.AutoMigrate(
+		&models.User{},
+		&models.Job{},
+		&models.Candidate{},
+		&models.Application{},
+	); err != nil {
 		log.Fatal("failed to migrate database:", err)
 	}
 
