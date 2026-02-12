@@ -19,6 +19,10 @@
         <button mat-flat-button color="primary" type="submit" class="submit-btn">
           Sign in
         </button>
+        <a mat-button routerLink="/forgot-password" class="forgot-link">Forgot password?</a>
+        @if (resetSuccess) {
+          <p class="success-msg">Password reset. Sign in with your new password.</p>
+        }
         <p class="dev-hint">Demo: admin / admin123</p>
       </form>
     </mat-card-content>

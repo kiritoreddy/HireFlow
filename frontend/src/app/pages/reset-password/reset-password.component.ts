@@ -1,14 +1,15 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
-  selector: 'app-login',
+  selector: 'app-reset-password',
   standalone: true,
   imports: [
     FormsModule,
@@ -16,16 +17,18 @@ import { AuthService } from '../../core/auth/auth.service';
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
+    MatIconModule,
     RouterLink,
   ],
-  templateUrl: './login.component.html',
-  styleUrl: './login.component.scss',
+  templateUrl: './reset-password.component.html',
+  styleUrl: './reset-password.component.scss',
 })
-export class LoginComponent implements OnInit {
-  username = '';
+export class ResetPasswordComponent {
   password = '';
+  confirmPassword = '';
   error = '';
-  resetSuccess = false;
+  hidePassword = true;
+  hideConfirm = true;
 
   constructor(
     private auth: AuthService,
@@ -33,19 +36,17 @@ export class LoginComponent implements OnInit {
     private route: ActivatedRoute
   ) {}
 
-  ngOnInit(): void {
-    this.resetSuccess = this.route.snapshot.queryParamMap.get('reset') === 'success';
-    if (this.auth.isLoggedIn()) {
-      this.router.navigate(['/']);
-    }
-  }
-
   onSubmit(): void {
     this.error = '';
-    if (this.auth.login(this.username, this.password)) {
-      this.router.navigate(['/']);
-    } else {
-      this.error = 'Invalid username or password';
+    if (this.password.length < 6) {
+      this.error = 'Password must be at least 6 characters';
+      return;
     }
+    if (this.password !== this.confirmPassword) {
+      this.error = 'Passwords do not match';
+      return;
+    }
+    this.auth.setResetPassword(this.password);
+    this.router.navigate(['/login'], { queryParams: { reset: 'success' } });
   }
 }
