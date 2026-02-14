@@ -12,7 +12,7 @@ The application supports multiple user roles and focuses on a clean, professiona
 **Backend**
 - Go (Golang)
 
-**Database**
+**Database** 
 - SQLite
 
 ## Team Members
