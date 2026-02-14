@@ -8,7 +8,7 @@ The application supports multiple user roles and focuses on a clean, professiona
 ## Tech Stack
 **Frontend**
 - Angular
- 
+   
 **Backend**
 - Go (Golang)
 
