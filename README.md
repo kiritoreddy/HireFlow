@@ -1,5 +1,5 @@
 # HireFlow 
-
+ 
 ## Project Description
 HireFlow is a Applicant Tracking System designed to manage the end-to-end recruitment process within an organization. The system allows recruiters to create job postings, track candidates across multiple hiring stages, collect structured interview feedback, and provide hiring managers with visibility into hiring decisions.
 
