@@ -6,10 +6,10 @@ HireFlow is a Applicant Tracking System designed to manage the end-to-end recrui
 The application supports multiple user roles and focuses on a clean, professional, and business-realistic workflow suitable for real-world recruitment scenarios.
  
 ## Tech Stack
-**Frontend** 
+**Frontend**
 - Angular
  
-**Backend**   
+**Backend** 
 - Go (Golang)
 
 **Database**
