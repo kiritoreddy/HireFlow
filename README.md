@@ -9,7 +9,7 @@ The application supports multiple user roles and focuses on a clean, professiona
 **Frontend**
 - Angular
  
-**Backend**
+**Backend**  
 - Go (Golang)
 
 **Database**
