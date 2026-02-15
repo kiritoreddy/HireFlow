@@ -6,11 +6,30 @@ const STATIC_PASSWORD = 'admin123';
 const AUTH_KEY = 'hireflow_logged_in';
 const RESET_PASSWORD_KEY = 'hireflow_reset_password';
 
+/** Current user profile (mock). Replace with API/token when backend is ready. */
+export interface CurrentUserProfile {
+  displayName: string;
+  email: string;
+  username: string;
+  role: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private loggedIn = signal<boolean>(this.hasStoredSession());
 
   isLoggedIn = computed(() => this.loggedIn());
+
+  /** Current user for profile display. Mock for static login; later from token/API. */
+  getCurrentUser(): CurrentUserProfile | null {
+    if (!this.hasStoredSession()) return null;
+    return {
+      displayName: 'Admin User',
+      email: 'admin@hireflow.demo',
+      username: STATIC_USERNAME,
+      role: 'Admin',
+    };
+  }
 
   constructor(private router: Router) {}
 

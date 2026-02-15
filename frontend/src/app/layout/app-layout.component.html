@@ -2,9 +2,35 @@
   <header class="app-header">
     <a mat-button routerLink="/" class="app-logo">HireFlow</a>
     <span class="app-header-spacer"></span>
-    <button mat-icon-button class="profile-icon" aria-label="Profile">
+    <button mat-icon-button class="profile-icon" [matMenuTriggerFor]="profileMenu" aria-label="Profile">
       <mat-icon>account_circle</mat-icon>
     </button>
+    <mat-menu #profileMenu="matMenu" panelClass="profile-menu" xPosition="before">
+      <div class="profile-menu-header">
+        <mat-icon>account_circle</mat-icon>
+        <span class="profile-name">{{ currentUser?.displayName ?? 'User' }}</span>
+      </div>
+      <mat-divider></mat-divider>
+      <div class="profile-details">
+        <div class="profile-row">
+          <span class="label">Email</span>
+          <span class="value">{{ currentUser?.email ?? '—' }}</span>
+        </div>
+        <div class="profile-row">
+          <span class="label">Username</span>
+          <span class="value">{{ currentUser?.username ?? '—' }}</span>
+        </div>
+        <div class="profile-row">
+          <span class="label">Role</span>
+          <span class="value">{{ currentUser?.role ?? '—' }}</span>
+        </div>
+      </div>
+      <mat-divider></mat-divider>
+      <button mat-menu-item (click)="logout()">
+        <mat-icon>logout</mat-icon>
+        <span>Logout</span>
+      </button>
+    </mat-menu>
   </header>
   <div class="app-body">
     <nav class="app-sidebar">
