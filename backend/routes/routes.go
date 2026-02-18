@@ -17,6 +17,11 @@ func SetupRoutes(db *gorm.DB) http.Handler {
 	// Health check endpoint
 	router.HandleFunc("/health", handlers.HealthHandler).Methods("GET")
 
+	// Authentication endpoints
+	authHandler := &handlers.AuthHandler{DB: db}
+	router.HandleFunc("/auth/register", authHandler.Register).Methods("POST") // User registration
+	router.HandleFunc("/auth/login", authHandler.Login).Methods("POST")       // User login
+
 	// Job CRUD API endpoints (BE-1: Complete Job CRUD implementation)
 	jobHandler := &handlers.JobHandler{DB: db}
 	router.HandleFunc("/jobs", jobHandler.CreateJob).Methods("POST")        // Commit 4
