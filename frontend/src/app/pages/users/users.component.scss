@@ -102,6 +102,21 @@ mat-card-content {
   color: #e65100;
 }
 
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  background: rgba(0, 150, 136, 0.12);
+  color: #00695c;
+}
+
+.status-badge.inactive {
+  background: rgba(0, 0, 0, 0.08);
+  color: rgba(0, 0, 0, 0.5);
+}
+
 .no-data td {
   text-align: center;
   color: rgba(0, 0, 0, 0.5);

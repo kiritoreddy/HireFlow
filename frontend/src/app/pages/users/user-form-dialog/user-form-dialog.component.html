@@ -1,6 +1,6 @@
 <h2 mat-dialog-title>{{ title }}</h2>
 <mat-dialog-content>
-  <p class="hint">Passwords are not stored or editable here. Default password is first 4 letters of username + @1234.</p>
+  <p class="hint">Passwords are not stored or editable here. Default password is first 4 letters of email + @1234.</p>
   <form class="user-form" (ngSubmit)="save()">
     <mat-form-field appearance="outline" class="full-width">
       <mat-label>First name</mat-label>
@@ -13,10 +13,6 @@
     <mat-form-field appearance="outline" class="full-width">
       <mat-label>Email</mat-label>
       <input matInput [(ngModel)]="email" name="email" type="email" required />
-    </mat-form-field>
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Username</mat-label>
-      <input matInput [(ngModel)]="username" name="username" required />
     </mat-form-field>
     <mat-form-field appearance="outline" class="full-width">
       <mat-label>Role</mat-label>

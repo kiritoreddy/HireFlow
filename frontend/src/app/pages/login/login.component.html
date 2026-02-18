@@ -6,8 +6,8 @@
     <mat-card-content>
       <form (ngSubmit)="onSubmit()" class="login-form">
         <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Username</mat-label>
-          <input matInput [(ngModel)]="username" name="username" type="text" required autocomplete="username" />
+          <mat-label>Email</mat-label>
+          <input matInput [(ngModel)]="email" name="email" type="email" required autocomplete="email" />
         </mat-form-field>
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Password</mat-label>
@@ -16,14 +16,13 @@
         @if (error) {
           <p class="error">{{ error }}</p>
         }
-        <button mat-flat-button color="primary" type="submit" class="submit-btn">
-          Sign in
+        <button mat-flat-button color="primary" type="submit" class="submit-btn" [disabled]="loading">
+          {{ loading ? 'Signing in…' : 'Sign in' }}
         </button>
         <a mat-button routerLink="/forgot-password" class="forgot-link">Forgot password?</a>
         @if (resetSuccess) {
           <p class="success-msg">Password reset. Sign in with your new password.</p>
         }
-        <p class="dev-hint">Demo: admin / admin123</p>
       </form>
     </mat-card-content>
   </mat-card>

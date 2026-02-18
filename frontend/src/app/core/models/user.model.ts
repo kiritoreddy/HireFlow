@@ -16,21 +16,21 @@ export interface User {
   firstName: string;
   lastName: string;
   email: string;
-  username: string;
   role: UserRole;
+  isActive: boolean;
 }
 
-/** For create/edit forms. No password – default is first 4 chars of username + @1234 (backend/app rule). */
+/** For create/edit forms. No password – default derived from email (backend/app rule). */
 export interface UserFormValue {
   firstName: string;
   lastName: string;
   email: string;
-  username: string;
   role: UserRole;
 }
 
-/** Default password rule: not stored or displayed. Computed when needed (e.g. backend). */
-export function getDefaultPasswordForUsername(username: string): string {
-  const prefix = username.slice(0, 4).toLowerCase();
+/** Default password for new users: meets backend rules (8+ chars, upper, lower, number, special). Derived from email. */
+export function getDefaultPasswordForEmail(email: string): string {
+  const local = (email.split('@')[0] ?? 'user').slice(0, 4).toLowerCase();
+  const prefix = local ? local[0].toUpperCase() + local.slice(1) : 'User';
   return `${prefix}@1234`;
 }

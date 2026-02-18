@@ -31,7 +31,6 @@ export class UserFormDialogComponent {
   firstName = '';
   lastName = '';
   email = '';
-  username = '';
   role: User['role'] = 'candidate';
 
   constructor(
@@ -43,7 +42,6 @@ export class UserFormDialogComponent {
       this.firstName = data.user.firstName;
       this.lastName = data.user.lastName;
       this.email = data.user.email;
-      this.username = data.user.username;
       this.role = data.user.role;
     }
   }
@@ -61,7 +59,6 @@ export class UserFormDialogComponent {
       firstName: this.firstName,
       lastName: this.lastName,
       email: this.email,
-      username: this.username,
       role: this.role,
     };
     this.dialogRef.close(value);
