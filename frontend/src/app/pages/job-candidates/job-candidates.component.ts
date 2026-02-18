@@ -1,58 +1,81 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { AgGridModule } from 'ag-grid-angular';
+import { ActivatedRoute } from '@angular/router';
+import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
+import { MatSelectModule } from '@angular/material/select';
+import { FormsModule } from '@angular/forms';
 import { AddCandidateDialogComponent } from './add-candidate-dialog.component';
+import { JobDataService } from '../../core/services/job-data.service';
+import { JobCandidate, CandidateStage } from '../../core/models/candidate.model';
+
+const STAGES: CandidateStage[] = ['Applied', 'Interview', 'Selected', 'Rejected'];
 
 @Component({
   selector: 'app-job-candidates',
   standalone: true,
   imports: [
     CommonModule,
-    AgGridModule,
+    MatTableModule,
     MatDialogModule,
     MatButtonModule,
+    MatSelectModule,
+    FormsModule,
   ],
   templateUrl: './job-candidates.component.html',
+  styleUrl: './job-candidates.component.scss',
 })
-export class JobCandidatesComponent {
-  constructor(private dialog: MatDialog) {}
+export class JobCandidatesComponent implements OnInit {
+  private route = inject(ActivatedRoute);
+  private dialog = inject(MatDialog);
+  private jobData = inject(JobDataService);
 
-  columnDefs = [
-    { field: 'name' },
-    { field: 'email' },
-    { field: 'resume' },
-    {
-      field: 'stage',
-      editable: true,
-      singleClickEdit: true,
-      cellEditor: 'agSelectCellEditor',
-      cellEditorParams: {
-        values: ['Applied', 'Interview', 'Selected', 'Rejected'],
-      },
-    },
-  ];
+  jobId: number | null = null;
+  jobTitle = '';
 
-  rowData: any[] = [
-    {
-      name: 'Harper Moore',
-      email: 'harper@email.com',
-      resume: 'Harper_Moore_Resume.pdf',
-      stage: 'Applied',
-    },
-  ];
+  displayedColumns: string[] = ['name', 'email', 'resume', 'stage'];
+  dataSource = new MatTableDataSource<JobCandidate>([]);
 
-  openAddCandidateDialog() {
+  readonly stages = STAGES;
+
+  ngOnInit(): void {
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id) {
+      this.jobId = +id;
+      const job = this.jobData.getJobById(this.jobId);
+      this.jobTitle = job?.title ?? `Job #${this.jobId}`;
+      this.refresh();
+    }
+  }
+
+  refresh(): void {
+    if (this.jobId != null) {
+      this.dataSource.data = this.jobData.getCandidatesForJob(this.jobId);
+    }
+  }
+
+  openAddCandidateDialog(): void {
     const dialogRef = this.dialog.open(AddCandidateDialogComponent, {
       width: '450px',
       disableClose: true,
     });
 
     dialogRef.afterClosed().subscribe((result) => {
-      if (result) {
-        this.rowData = [...this.rowData, result];
+      if (result && this.jobId != null) {
+        this.jobData.addCandidate({
+          jobId: this.jobId,
+          name: result.name,
+          email: result.email,
+          resume: result.resume || '—',
+          stage: 'Applied',
+        });
+        this.refresh();
       }
     });
+  }
+
+  onStageChange(candidate: JobCandidate, newStage: CandidateStage): void {
+    this.jobData.updateCandidateStage(candidate.id, newStage);
   }
 }

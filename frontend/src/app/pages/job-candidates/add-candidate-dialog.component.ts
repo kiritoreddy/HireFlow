@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDialogRef } from '@angular/material/dialog';
@@ -23,12 +23,27 @@ export class AddCandidateDialogComponent implements OnInit {
   email = '';
   resume = '';
 
+  @ViewChild('fileInput') fileInput?: ElementRef<HTMLInputElement>;
+
   constructor(private dialogRef: MatDialogRef<AddCandidateDialogComponent>) {}
 
-  ngOnInit() {
+  ngOnInit(): void {
+    this.resetForm();
+  }
+
+  private resetForm(): void {
     this.name = '';
     this.email = '';
     this.resume = '';
+    if (this.fileInput?.nativeElement) {
+      this.fileInput.nativeElement.value = '';
+    }
+  }
+
+  ngAfterViewInit(): void {
+    if (this.fileInput?.nativeElement) {
+      this.fileInput.nativeElement.value = '';
+    }
   }
 
   onFileChange(event: Event) {
@@ -44,16 +59,12 @@ export class AddCandidateDialogComponent implements OnInit {
     }
 
     const payload = {
-      name: this.name,
-      email: this.email,
+      name: this.name.trim(),
+      email: this.email.trim(),
       resume: this.resume || '—',
       stage: 'Applied',
     };
-
-    // FORCE correct timing (this fixes your exact bug)
-    setTimeout(() => {
-      this.dialogRef.close(payload);
-    });
+    this.dialogRef.close(payload);
   }
 
   cancel() {
