@@ -15,6 +15,7 @@ func main() {
 	// Auto-migrate database schema
 	if err := db.AutoMigrate(
 		&models.User{},
+		&models.PasswordResetToken{},
 		&models.Job{},
 		&models.Candidate{},
 		&models.Application{},

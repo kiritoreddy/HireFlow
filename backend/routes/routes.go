@@ -20,6 +20,14 @@ func SetupRoutes(db *gorm.DB) http.Handler {
 	authHandler := &handlers.AuthHandler{DB: db}
 	router.HandleFunc("/auth/register", authHandler.Register).Methods("POST") // User registration
 	router.HandleFunc("/auth/login", authHandler.Login).Methods("POST")       // User login
+	router.HandleFunc("/auth/forgot-password", authHandler.ForgotPassword).Methods("POST")
+	router.HandleFunc("/auth/reset-password", authHandler.ResetPassword).Methods("POST")
+
+	// Admin user management (JWT + admin role required)
+	userHandler := &handlers.UserHandler{DB: db}
+	router.HandleFunc("/users", middleware.RequireAuth(middleware.RequireAdmin(userHandler.ListUsers))).Methods("GET")
+	router.HandleFunc("/users", middleware.RequireAuth(middleware.RequireAdmin(userHandler.CreateUser))).Methods("POST")
+	router.HandleFunc("/users/{id}", middleware.RequireAuth(middleware.RequireAdmin(userHandler.SetUserActive))).Methods("PATCH")
 
 	// Job CRUD API endpoints (BE-1: Complete Job CRUD implementation)
 	jobHandler := &handlers.JobHandler{DB: db}

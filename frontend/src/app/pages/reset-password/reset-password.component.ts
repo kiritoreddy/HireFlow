@@ -29,24 +29,53 @@ export class ResetPasswordComponent {
   error = '';
   hidePassword = true;
   hideConfirm = true;
+  token = '';
 
   constructor(
     private auth: AuthService,
     private router: Router,
     private route: ActivatedRoute
-  ) {}
+  ) {
+    // Demo: token from navigation state (forgot-password button) or sessionStorage, then query param
+    const fromState = this.router.getCurrentNavigation()?.extras?.state as { resetToken?: string } | undefined;
+    this.token =
+      fromState?.resetToken ??
+      sessionStorage.getItem('hireflow_reset_token') ??
+      this.route.snapshot.queryParamMap.get('token') ??
+      '';
+  }
+
+  private validatePassword(pw: string): string | null {
+    if (pw.length < 8) return 'Password must be at least 8 characters';
+    if (!/[A-Z]/.test(pw)) return 'Password must include at least one uppercase letter';
+    if (!/[a-z]/.test(pw)) return 'Password must include at least one lowercase letter';
+    if (!/[0-9]/.test(pw)) return 'Password must include at least one number';
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(pw)) return 'Password must include at least one special character';
+    return null;
+  }
 
   onSubmit(): void {
     this.error = '';
-    if (this.password.length < 6) {
-      this.error = 'Password must be at least 6 characters';
+    if (!this.token) {
+      this.error = 'Missing reset token. Please request a new reset link.';
+      return;
+    }
+    const pwErr = this.validatePassword(this.password);
+    if (pwErr) {
+      this.error = pwErr;
       return;
     }
     if (this.password !== this.confirmPassword) {
       this.error = 'Passwords do not match';
       return;
     }
-    this.auth.setResetPassword(this.password);
-    this.router.navigate(['/login'], { queryParams: { reset: 'success' } });
+    this.auth.resetPassword(this.token, this.password).subscribe((res) => {
+      if (!res.success) {
+        this.error = res.error ?? 'Failed to reset password';
+        return;
+      }
+      sessionStorage.removeItem('hireflow_reset_token');
+      this.router.navigate(['/login'], { queryParams: { reset: 'success' } });
+    });
   }
 }

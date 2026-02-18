@@ -23,9 +23,11 @@ import { AuthService, CurrentUserProfile } from '../core/auth/auth.service';
 })
 export class AppLayoutComponent {
   currentUser: CurrentUserProfile | null = null;
+  isAdmin = false;
 
   constructor(private auth: AuthService) {
     this.currentUser = this.auth.getCurrentUser();
+    this.isAdmin = (this.currentUser?.role ?? '') === 'admin';
   }
 
   logout(): void {

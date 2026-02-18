@@ -1,73 +1,81 @@
-import { Injectable, signal, computed } from '@angular/core';
-import { User, UserFormValue, UserRole } from '../models/user.model';
+import { Injectable, inject, signal, computed } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable, tap, map, catchError, of, throwError } from 'rxjs';
+import { AuthService } from '../auth/auth.service';
+import { User, UserFormValue, getDefaultPasswordForEmail } from '../models/user.model';
+import { USERS_ENDPOINTS } from '../config/api.config';
 
-/** Mock data. Replace with HTTP calls when backend is ready. */
-const MOCK_USERS: User[] = [
-  {
-    id: '1',
-    firstName: 'Jane',
-    lastName: 'Admin',
-    email: 'jane.admin@hireflow.demo',
-    username: 'janeadmin',
-    role: 'admin',
-  },
-  {
-    id: '2',
-    firstName: 'John',
-    lastName: 'Hiring',
-    email: 'john.hiring@hireflow.demo',
-    username: 'johnhm',
-    role: 'hiring_manager',
-  },
-  {
-    id: '3',
-    firstName: 'Alex',
-    lastName: 'Interviewer',
-    email: 'alex.int@hireflow.demo',
-    username: 'alexint',
-    role: 'interviewer',
-  },
-  {
-    id: '4',
-    firstName: 'Sam',
-    lastName: 'Candidate',
-    email: 'sam.candidate@hireflow.demo',
-    username: 'samcand',
-    role: 'candidate',
-  },
-];
+/** Backend user list item (no password) */
+interface BackendUser {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+function backendUserToFrontend(b: BackendUser): User {
+  const parts = (b.name || '').trim().split(/\s+/);
+  const firstName = parts[0] ?? '';
+  const lastName = parts.slice(1).join(' ') ?? '';
+  return {
+    id: String(b.id),
+    firstName,
+    lastName,
+    email: b.email,
+    role: b.role as User['role'],
+    isActive: b.is_active,
+  };
+}
 
 @Injectable({ providedIn: 'root' })
 export class UserService {
   private users = signal<User[]>([]);
+  private http = inject(HttpClient);
+  private auth = inject(AuthService);
 
   readonly usersList = computed(() => this.users());
 
-  constructor() {
-    this.users.set([...MOCK_USERS]);
+  private authHeaders(): HttpHeaders {
+    const token = this.auth.getToken();
+    return new HttpHeaders(token ? { Authorization: `Bearer ${token}` } : {});
   }
 
-  /** Fetch all users. Later: return this.http.get<User[]>(...) */
-  loadUsers(): void {
-    // Mock: already in memory. Later: this.users.set(await api.getUsers());
+  /** Fetch all users from backend (admin). Updates internal list and returns it. */
+  loadUsers(): Observable<User[]> {
+    return this.http.get<BackendUser[]>(USERS_ENDPOINTS.list, { headers: this.authHeaders() }).pipe(
+      map((list) => list.map(backendUserToFrontend)),
+      tap((list) => this.users.set(list)),
+      catchError((err) => {
+        console.error('loadUsers failed', err);
+        return of([]);
+      })
+    );
   }
 
   getById(id: string): User | undefined {
     return this.users().find((u) => u.id === id);
   }
 
-  addUser(form: UserFormValue): User {
-    const id = crypto.randomUUID();
-    const user: User = {
-      id,
-      firstName: form.firstName.trim(),
-      lastName: form.lastName.trim(),
+  /** Create user via backend (admin). Uses default password derived from email. */
+  addUser(form: UserFormValue): Observable<User> {
+    const name = [form.firstName, form.lastName].filter(Boolean).join(' ').trim() || form.email;
+    const password = getDefaultPasswordForEmail(form.email);
+    const body = {
+      name,
       email: form.email.trim().toLowerCase(),
-      username: form.username.trim().toLowerCase(),
+      password,
       role: form.role,
     };
-    this.users.update((list) => [...list, user]);
-    return user;
+    return this.http.post<BackendUser>(USERS_ENDPOINTS.create, body, { headers: this.authHeaders() }).pipe(
+      map(backendUserToFrontend),
+      tap((user) => this.users.update((list) => [...list, user])),
+      catchError((err) => {
+        const msg = err?.error?.error ?? err?.message ?? 'Failed to create user';
+        return throwError(() => new Error(msg));
+      })
+    );
   }
 
   updateUser(id: string, form: UserFormValue): User | undefined {
@@ -78,18 +86,23 @@ export class UserService {
       firstName: form.firstName.trim(),
       lastName: form.lastName.trim(),
       email: form.email.trim().toLowerCase(),
-      username: form.username.trim().toLowerCase(),
       role: form.role,
     };
     this.users.update((list) => list.map((u) => (u.id === id ? updated : u)));
     return updated;
   }
 
-  deleteUser(id: string): boolean {
-    const found = this.users().some((u) => u.id === id);
-    if (found) {
-      this.users.update((list) => list.filter((u) => u.id !== id));
-    }
-    return found;
+  /** Set user active/inactive via backend (admin). Returns observable; errors surface to caller. */
+  setUserActive(id: string, isActive: boolean): Observable<User> {
+    return this.http
+      .patch<BackendUser>(USERS_ENDPOINTS.patch(id), { is_active: isActive }, { headers: this.authHeaders() })
+      .pipe(
+        map(backendUserToFrontend),
+        tap((user) => this.users.update((list) => list.map((u) => (u.id === id ? user : u)))),
+        catchError((err) => {
+          const msg = err?.error?.error ?? err?.message ?? 'Failed to update user';
+          return throwError(() => new Error(msg));
+        })
+      );
   }
 }

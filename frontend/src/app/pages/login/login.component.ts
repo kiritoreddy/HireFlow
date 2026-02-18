@@ -22,9 +22,10 @@ import { AuthService } from '../../core/auth/auth.service';
   styleUrl: './login.component.scss',
 })
 export class LoginComponent implements OnInit {
-  username = '';
+  email = '';
   password = '';
   error = '';
+  loading = false;
   resetSuccess = false;
 
   constructor(
@@ -42,10 +43,14 @@ export class LoginComponent implements OnInit {
 
   onSubmit(): void {
     this.error = '';
-    if (this.auth.login(this.username, this.password)) {
-      this.router.navigate(['/']);
-    } else {
-      this.error = 'Invalid username or password';
-    }
+    this.loading = true;
+    this.auth.login(this.email, this.password).subscribe((result) => {
+      this.loading = false;
+      if (result === true) {
+        this.router.navigate(['/']);
+      } else {
+        this.error = (result as { error: string }).error ?? 'Invalid credentials';
+      }
+    });
   }
 }
