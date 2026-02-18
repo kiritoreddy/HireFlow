@@ -1,0 +1,11 @@
+<h1>Jobs</h1>
+
+<ul>
+  <li *ngFor="let job of jobs">
+    {{ job.title }}
+    —
+    <a [routerLink]="['/jobs', job.id, 'candidates']">
+      View Candidates
+    </a>
+  </li>
+</ul>

@@ -13,9 +13,24 @@ export const routes: Routes = [
     component: AppLayoutComponent,
     children: [
       { path: '', component: DashboardComponent },
-      { path: 'candidates', loadComponent: () => import('./pages/candidates/candidates.component').then(m => m.CandidatesComponent) },
-      { path: 'jobs', loadComponent: () => import('./pages/jobs/jobs.component').then(m => m.JobsComponent) },
-      { path: 'users', loadComponent: () => import('./pages/users/users.component').then(m => m.UsersComponent) },
+      {
+        path: 'candidates',
+        loadComponent: () =>
+          import('./pages/candidates/candidates-overview.component').then(m => m.CandidatesOverviewComponent),
+      },
+      {
+        path: 'jobs/:id/candidates',
+        loadComponent: () =>
+          import('./pages/job-candidates/job-candidates.component').then(m => m.JobCandidatesComponent),
+      },
+      {
+        path: 'jobs',
+        loadComponent: () => import('./pages/jobs/jobs.component').then(m => m.JobsComponent),
+      },
+      {
+        path: 'users',
+        loadComponent: () => import('./pages/users/users.component').then(m => m.UsersComponent),
+      },
     ],
   },
   { path: '**', redirectTo: '' },
