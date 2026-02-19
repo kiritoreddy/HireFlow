@@ -2,10 +2,6 @@
 
 ---
 
-# Presentation video links
-
----
-
 # 1. Finalized User Stories (21)
 
 ## 🔐 Admin
