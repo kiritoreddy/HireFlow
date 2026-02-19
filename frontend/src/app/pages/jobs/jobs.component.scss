@@ -1,0 +1,62 @@
+.jobs-page {
+  padding: 0;
+}
+
+.page-title {
+  font-size: 1.75rem;
+  margin: 0 0 0.25rem 0;
+}
+
+.subtitle {
+  margin: 0 0 1.5rem;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.table-wrap {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.jobs-table {
+  width: 100%;
+  background: #fff;
+}
+
+.jobs-table th {
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.7);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.jobs-table td,
+.jobs-table th {
+  padding: 1rem 1.25rem;
+}
+
+.jobs-table tr.mat-row:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  background: rgba(0, 150, 136, 0.12);
+  color: #00695c;
+}
+
+.status-badge.closed {
+  background: rgba(0, 0, 0, 0.08);
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.no-data td {
+  text-align: center;
+  color: rgba(0, 0, 0, 0.5);
+  padding: 2rem;
+}
