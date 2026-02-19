@@ -1,0 +1,53 @@
+.job-candidates-page {
+  padding: 0;
+}
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.header-row h2 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.candidates-table {
+  width: 100%;
+  background: #fff;
+}
+
+.candidates-table th {
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.7);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.candidates-table td,
+.candidates-table th {
+  padding: 1rem 1.25rem;
+}
+
+.candidates-table tr.mat-row:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.stage-select {
+  min-width: 140px;
+}
+
+.no-data td {
+  text-align: center;
+  color: rgba(0, 0, 0, 0.5);
+  padding: 2rem;
+}

@@ -1,0 +1,68 @@
+<div class="users-page">
+  <mat-card class="users-card">
+    <mat-card-header>
+      <div class="header-row">
+        <div>
+          <mat-card-title>Users</mat-card-title>
+          <mat-card-subtitle>Create users and assign roles. Passwords are not shown or editable.</mat-card-subtitle>
+        </div>
+        <span class="header-actions">
+          @if (isAdmin) {
+            <button mat-flat-button color="primary" (click)="openCreate()">
+              <mat-icon>person_add</mat-icon>
+              Add user
+            </button>
+          }
+        </span>
+      </div>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="table-wrap">
+        <table mat-table [dataSource]="dataSource" class="users-table">
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>Name</th>
+            <td mat-cell *matCellDef="let row">{{ fullName(row) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="email">
+            <th mat-header-cell *matHeaderCellDef>Email</th>
+            <td mat-cell *matCellDef="let row">{{ row.email }}</td>
+          </ng-container>
+          <ng-container matColumnDef="role">
+            <th mat-header-cell *matHeaderCellDef>Role</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="role-badge" [attr.data-role]="row.role">{{ roleLabel(row.role) }}</span>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Status</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="status-badge" [class.inactive]="!row.isActive">{{ row.isActive ? 'Active' : 'Inactive' }}</span>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let row">
+              <button mat-icon-button (click)="openEdit(row)" aria-label="Edit user">
+                <mat-icon>edit</mat-icon>
+              </button>
+              @if (row.isActive) {
+                <button mat-icon-button (click)="setUserActive(row, false)" aria-label="Deactivate user" color="warn">
+                  <mat-icon>person_off</mat-icon>
+                </button>
+              } @else {
+                <button mat-icon-button (click)="setUserActive(row, true)" aria-label="Activate user">
+                  <mat-icon>person_add</mat-icon>
+                </button>
+              }
+            </td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+          <tr class="mat-row no-data" *matNoDataRow>
+            <td class="mat-cell" [attr.colspan]="displayedColumns.length">No users yet. Add one to get started.</td>
+          </tr>
+        </table>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>

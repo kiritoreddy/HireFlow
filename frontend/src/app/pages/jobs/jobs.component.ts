@@ -1,17 +1,29 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
+import { MatTableModule, MatTableDataSource } from '@angular/material/table';
+import { MatButtonModule } from '@angular/material/button';
+import { JobDataService } from '../../core/services/job-data.service';
+import { Job } from '../../core/models/job.model';
 
 @Component({
   selector: 'app-jobs',
   standalone: true,
-  template: `
-    <h1>Jobs</h1>
-    <p>Job listings will go here.</p>
-  `,
-  styles: [
-    `
-      h1 { margin: 0 0 0.5rem 0; font-size: 1.75rem; }
-      p { margin: 0; color: rgba(0, 0, 0, 0.7); }
-    `,
-  ],
+  imports: [CommonModule, RouterModule, MatTableModule, MatButtonModule],
+  templateUrl: './jobs.component.html',
+  styleUrl: './jobs.component.scss',
 })
-export class JobsComponent {}
+export class JobsComponent implements OnInit {
+  private jobData = inject(JobDataService);
+
+  displayedColumns: string[] = ['title', 'description', 'department', 'location', 'status', 'actions'];
+  dataSource = new MatTableDataSource<Job>([]);
+
+  ngOnInit(): void {
+    this.refresh();
+  }
+
+  refresh(): void {
+    this.dataSource.data = this.jobData.getJobs();
+  }
+}

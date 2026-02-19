@@ -3,9 +3,15 @@ package main
 import (
 	"backend/config"
 	"backend/models"
+
 	"backend/routes"
 	"log"
 	"net/http"  
+
+	"backend/routes" 
+	"log" 
+	"net/http"   
+
 ) 
 
 func main() {
@@ -13,7 +19,13 @@ func main() {
 	db := config.InitDB()
 
 	// Auto-migrate database schema
-	if err := db.AutoMigrate(&models.User{}, &models.Job{}); err != nil {
+	if err := db.AutoMigrate(
+		&models.User{},
+		&models.PasswordResetToken{},
+		&models.Job{},
+		&models.Candidate{},
+		&models.Application{},
+	); err != nil {
 		log.Fatal("failed to migrate database:", err)
 	}
 
