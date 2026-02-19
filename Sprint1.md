@@ -180,3 +180,13 @@ Sprint 1 successfully established:
 - Backend job module foundation  
 - Shared frontend data architecture  
 - Structured UI for jobs and candidates  
+
+
+# 7. Video Links 
+
+Hireflow front end and backend combined full video (24mins duration)
+- https://drive.google.com/file/d/1TxRakOSzujsTO2_-v5ZDjrOAllbaQbiQ/view?usp=sharing
+
+Frontend only video (duration 5 min)
+- https://drive.google.com/file/d/1bPWgNo_UMw51gcnkcmc0RgQnTQ5F0ADc/view?usp=sharing
+
