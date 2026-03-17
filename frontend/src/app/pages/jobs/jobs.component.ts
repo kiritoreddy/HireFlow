@@ -51,6 +51,18 @@ export class JobsComponent implements OnInit, AfterViewInit {
   statusFilter: StatusFilter = 'all';
   loading = signal(false);
 
+  get totalJobs(): number {
+    return this.jobData.getJobs().length;
+  }
+
+  get openJobs(): number {
+    return this.jobData.getJobs().filter((j) => j.status === 'Open').length;
+  }
+
+  get closedJobs(): number {
+    return this.jobData.getJobs().filter((j) => j.status === 'Closed').length;
+  }
+
   get emptyMessage(): string {
     if (this.loading()) return '';
     const data = this.dataSource.data;

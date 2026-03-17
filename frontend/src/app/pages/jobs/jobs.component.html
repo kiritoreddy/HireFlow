@@ -10,6 +10,21 @@
     </button>
   </header>
 
+  <div class="stats-row" aria-label="Job stats">
+    <div class="stat-card">
+      <div class="stat-label">Total</div>
+      <div class="stat-value">{{ totalJobs }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Open</div>
+      <div class="stat-value open">{{ openJobs }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Closed</div>
+      <div class="stat-value closed">{{ closedJobs }}</div>
+    </div>
+  </div>
+
   <div class="toolbar">
     <mat-form-field appearance="outline" class="search-field">
       <mat-label>Search jobs</mat-label>
