@@ -68,7 +68,7 @@ export class JobsComponent implements OnInit, AfterViewInit {
     const data = this.dataSource.data;
     if (data.length === 0)
       return this.searchQuery || this.statusFilter !== 'all'
-        ? 'No jobs match your filters.'
+        ? 'No jobs match your filters. Try clearing filters.'
         : 'No jobs yet. Add your first job to get started.';
     return '';
   }
@@ -110,6 +110,13 @@ export class JobsComponent implements OnInit, AfterViewInit {
   }
 
   onStatusFilterChange(): void {
+    this.refresh();
+  }
+
+  clearFilters(): void {
+    if (!this.searchQuery && this.statusFilter === 'all') return;
+    this.searchQuery = '';
+    this.statusFilter = 'all';
     this.refresh();
   }
 }

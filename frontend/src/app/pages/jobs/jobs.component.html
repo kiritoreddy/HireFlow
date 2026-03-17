@@ -39,6 +39,15 @@
         <mat-option value="Closed">Closed</mat-option>
       </mat-select>
     </mat-form-field>
+    <button
+      mat-stroked-button
+      type="button"
+      class="clear-btn"
+      (click)="clearFilters()"
+      [disabled]="!searchQuery && statusFilter === 'all'"
+    >
+      Clear
+    </button>
   </div>
 
   <mat-card class="table-card">
