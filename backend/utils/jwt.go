@@ -2,6 +2,7 @@ package utils
 
 import (
 	"errors"
+	"log"
 	"os"
 	"time"
 
@@ -29,8 +30,8 @@ func GetJWTSecret() string {
 
 // GenerateJWT creates a new JWT token for authenticated user
 func GenerateJWT(userID uint, email string, role string) (string, error) {
-	// Token expires in 15 minutes
-	expirationTime := time.Now().Add(15 * time.Minute)
+	// Token expires in 24 hours (use shorter duration in production)
+	expirationTime := time.Now().Add(24 * time.Hour)
 
 	// Create claims with user information
 	claims := &JWTClaims{
@@ -67,6 +68,7 @@ func ValidateJWT(tokenString string) (*JWTClaims, error) {
 	})
 
 	if err != nil {
+		log.Printf("[JWT DEBUG] Validation failed: %v", err)
 		return nil, err
 	}
 
@@ -75,5 +77,6 @@ func ValidateJWT(tokenString string) (*JWTClaims, error) {
 		return claims, nil
 	}
 
+	log.Printf("[JWT DEBUG] Invalid token: claims or token.Valid check failed")
 	return nil, errors.New("invalid token")
 }

@@ -2,13 +2,13 @@
 <p class="subtitle">View and manage candidates across all jobs</p>
 
 <div class="cards">
-  <div class="card" *ngFor="let job of jobs">
+  <div class="card" *ngFor="let job of jobsWithCounts">
     <div class="card-header">
       <div>
         <h2>{{ job.title }}</h2>
         <span>{{ job.department }}</span>
       </div>
-      <span class="badge">Open</span>
+      <span class="badge" [class.closed]="job.status === 'Closed'">{{ job.status }}</span>
     </div>
 
     <div class="stats">
@@ -22,8 +22,7 @@
       class="view-btn"
       [routerLink]="['/jobs', job.id, 'candidates']"
     >
-      View {{ job.applied + job.interview + job.selected + job.rejected }}
-      Candidates →
+      View {{ job.total }} Candidates →
     </a>
   </div>
 </div>
