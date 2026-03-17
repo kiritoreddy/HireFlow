@@ -10,49 +10,75 @@
     </button>
   </header>
 
+  <div class="toolbar">
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-label>Search jobs</mat-label>
+      <input matInput [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange()" placeholder="Title, description, department..." />
+      <mat-icon matPrefix>search</mat-icon>
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="status-field">
+      <mat-label>Status</mat-label>
+      <mat-select [(ngModel)]="statusFilter" (ngModelChange)="onStatusFilterChange()">
+        <mat-option value="all">All</mat-option>
+        <mat-option value="Open">Open</mat-option>
+        <mat-option value="Closed">Closed</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
   <mat-card class="table-card">
-    <div class="table-wrap">
-      <table mat-table [dataSource]="dataSource" class="jobs-table">
-        <ng-container matColumnDef="title">
-          <th mat-header-cell *matHeaderCellDef>Title</th>
-          <td mat-cell *matCellDef="let row">
-            <span class="cell-title">{{ row.title }}</span>
-          </td>
-        </ng-container>
-        <ng-container matColumnDef="description">
-          <th mat-header-cell *matHeaderCellDef>Description</th>
-          <td mat-cell *matCellDef="let row">
-            <span class="cell-desc">{{ row.description || '—' }}</span>
-          </td>
-        </ng-container>
-        <ng-container matColumnDef="department">
-          <th mat-header-cell *matHeaderCellDef>Department</th>
-          <td mat-cell *matCellDef="let row">{{ row.department || '—' }}</td>
-        </ng-container>
-        <ng-container matColumnDef="location">
-          <th mat-header-cell *matHeaderCellDef>Location</th>
-          <td mat-cell *matCellDef="let row">{{ row.location || '—' }}</td>
-        </ng-container>
-        <ng-container matColumnDef="status">
-          <th mat-header-cell *matHeaderCellDef>Status</th>
-          <td mat-cell *matCellDef="let row">
-            <span class="status-badge" [class.closed]="row.status === 'Closed'">{{ row.status }}</span>
-          </td>
-        </ng-container>
-        <ng-container matColumnDef="actions">
-          <th mat-header-cell *matHeaderCellDef></th>
-          <td mat-cell *matCellDef="let row">
-            <a mat-button color="primary" [routerLink]="['/jobs', row.id, 'candidates']">
-              View candidates
-            </a>
-          </td>
-        </ng-container>
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-        <tr class="mat-row no-data" *matNoDataRow>
-          <td class="mat-cell" [attr.colspan]="displayedColumns.length">No jobs yet.</td>
-        </tr>
-      </table>
-    </div>
+    @if (loading()) {
+      <div class="loading-wrap">
+        <mat-spinner diameter="40"></mat-spinner>
+        <span>Loading jobs…</span>
+      </div>
+    } @else if (emptyMessage) {
+      <div class="empty-state">
+        <mat-icon>work_off</mat-icon>
+        <p class="empty-title">No jobs to show</p>
+        <p class="empty-desc">{{ emptyMessage }}</p>
+      </div>
+    } @else {
+      <div class="table-wrap">
+        <table mat-table [dataSource]="dataSource" class="jobs-table">
+          <ng-container matColumnDef="title">
+            <th mat-header-cell *matHeaderCellDef>Title</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="cell-title">{{ row.title }}</span>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="description">
+            <th mat-header-cell *matHeaderCellDef>Description</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="cell-desc">{{ row.description || '—' }}</span>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="department">
+            <th mat-header-cell *matHeaderCellDef>Department</th>
+            <td mat-cell *matCellDef="let row">{{ row.department || '—' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="location">
+            <th mat-header-cell *matHeaderCellDef>Location</th>
+            <td mat-cell *matCellDef="let row">{{ row.location || '—' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Status</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="status-badge" [class.closed]="row.status === 'Closed'">{{ row.status }}</span>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let row">
+              <a mat-button color="primary" [routerLink]="['/jobs', row.id, 'candidates']">
+                View candidates
+              </a>
+            </td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+        </table>
+      </div>
+    }
   </mat-card>
 </div>
