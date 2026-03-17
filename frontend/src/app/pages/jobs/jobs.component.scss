@@ -1,0 +1,111 @@
+.jobs-page {
+  padding: 0;
+  max-width: 1200px;
+}
+
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.header-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.page-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin: 0 0 0.25rem 0;
+  color: rgba(0, 0, 0, 0.87);
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.add-job-btn {
+  flex-shrink: 0;
+}
+
+.add-job-btn mat-icon {
+  margin-right: 0.35rem;
+  vertical-align: middle;
+  font-size: 1.25rem;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.table-card {
+  overflow: hidden;
+  padding: 0;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.jobs-table {
+  width: 100%;
+  background: transparent;
+}
+
+.jobs-table th {
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.7);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.jobs-table td,
+.jobs-table th {
+  padding: 1rem 1.25rem;
+}
+
+.jobs-table tr.mat-row:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.cell-title {
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.87);
+}
+
+.cell-desc {
+  max-width: 280px;
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 0.875rem;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  background: rgba(0, 150, 136, 0.12);
+  color: #00695c;
+}
+
+.status-badge.closed {
+  background: rgba(0, 0, 0, 0.08);
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.no-data td {
+  text-align: center;
+  color: rgba(0, 0, 0, 0.5);
+  padding: 2rem;
+}
