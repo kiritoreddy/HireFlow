@@ -6,14 +6,10 @@ import (
 
 	"backend/routes"
 	"log"
-	"net/http"  
+	"net/http"
+)
 
-	"backend/routes" 
-	"log" 
-	"net/http"   
-
-) 
-
+// Main entry point for the HireFlow backend application
 func main() {
 	// Initialize database connection
 	db := config.InitDB()
