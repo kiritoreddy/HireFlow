@@ -1,43 +1,103 @@
 <div class="jobs-page">
-  <h1 class="page-title">Jobs</h1>
-  <p class="subtitle">View open and closed job postings</p>
+  <div class="page-header">
+    <div class="page-heading">
+      <div class="breadcrumb">
+        <mat-icon>work</mat-icon>
+        <span>Jobs</span>
+      </div>
+
+      <h1 class="page-title">Jobs</h1>
+      <p class="subtitle">Manage your job postings and track candidates</p>
+    </div>
+
+    <button mat-flat-button color="primary" class="create-btn">
+      <mat-icon>add</mat-icon>
+      Create Job
+    </button>
+  </div>
+
+  <div class="toolbar">
+    <div class="filters">
+      <button mat-flat-button color="primary">All Jobs</button>
+      <button mat-stroked-button>Open</button>
+      <button mat-stroked-button>Closed</button>
+    </div>
+
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-icon matPrefix>search</mat-icon>
+      <input matInput placeholder="Search by title or department..." [(ngModel)]="searchTerm" />
+    </mat-form-field>
+  </div>
 
   <div class="table-wrap">
     <table mat-table [dataSource]="dataSource" class="jobs-table">
       <ng-container matColumnDef="title">
         <th mat-header-cell *matHeaderCellDef>Title</th>
-        <td mat-cell *matCellDef="let row">{{ row.title }}</td>
+        <td mat-cell *matCellDef="let row">
+          <div class="job-title-cell">
+            <div class="job-title">{{ row.title }}</div>
+            <div class="job-description">{{ row.description || 'No description available' }}</div>
+          </div>
+        </td>
       </ng-container>
-      <ng-container matColumnDef="description">
-        <th mat-header-cell *matHeaderCellDef>Description</th>
-        <td mat-cell *matCellDef="let row">{{ row.description || '—' }}</td>
-      </ng-container>
+
       <ng-container matColumnDef="department">
         <th mat-header-cell *matHeaderCellDef>Department</th>
         <td mat-cell *matCellDef="let row">{{ row.department || '—' }}</td>
       </ng-container>
+
       <ng-container matColumnDef="location">
         <th mat-header-cell *matHeaderCellDef>Location</th>
         <td mat-cell *matCellDef="let row">{{ row.location || '—' }}</td>
       </ng-container>
+
       <ng-container matColumnDef="status">
         <th mat-header-cell *matHeaderCellDef>Status</th>
         <td mat-cell *matCellDef="let row">
-          <span class="status-badge" [class.closed]="row.status === 'Closed'">{{ row.status }}</span>
+          <span class="status-badge" [class.closed]="row.status === 'Closed'">
+            {{ row.status }}
+          </span>
         </td>
       </ng-container>
+
+      <ng-container matColumnDef="candidates">
+        <th mat-header-cell *matHeaderCellDef>Candidates</th>
+        <td mat-cell *matCellDef="let row">
+          <div class="candidate-count">
+            <mat-icon>group</mat-icon>
+            <span>{{ getCandidateCount(row.id) }}</span>
+          </div>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="updated">
+        <th mat-header-cell *matHeaderCellDef>Updated</th>
+        <td mat-cell *matCellDef="let row">Recently updated</td>
+      </ng-container>
+
       <ng-container matColumnDef="actions">
         <th mat-header-cell *matHeaderCellDef></th>
         <td mat-cell *matCellDef="let row">
-          <a mat-button color="primary" [routerLink]="['/jobs', row.id, 'candidates']">
-            View Candidates
-          </a>
+          <button mat-icon-button [matMenuTriggerFor]="jobMenu" aria-label="Job actions">
+            <mat-icon>more_horiz</mat-icon>
+          </button>
+
+          <mat-menu #jobMenu="matMenu">
+            <button mat-menu-item [routerLink]="['/jobs', row.id, 'candidates']">
+              <mat-icon>group</mat-icon>
+              <span>View Candidates</span>
+            </button>
+          </mat-menu>
         </td>
       </ng-container>
+
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
       <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+
       <tr class="mat-row no-data" *matNoDataRow>
-        <td class="mat-cell" [attr.colspan]="displayedColumns.length">No jobs yet.</td>
+        <td class="mat-cell" [attr.colspan]="displayedColumns.length">
+          No jobs yet.
+        </td>
       </tr>
     </table>
   </div>

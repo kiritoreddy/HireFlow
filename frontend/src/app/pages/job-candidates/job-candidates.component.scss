@@ -2,22 +2,88 @@
   padding: 0;
 }
 
-.header-row {
+.page-header {
   display: flex;
+  align-items: flex-start;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
-.header-row h2 {
+.header-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.back-btn {
+  margin-top: 2px;
+}
+
+.heading-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.breadcrumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.breadcrumb mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.breadcrumb-link {
+  cursor: pointer;
+}
+
+.page-title {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 32px;
+  line-height: 1.1;
+  font-weight: 700;
+  color: #111827;
+}
+
+.subtitle {
+  margin: 0;
+  color: #6b7280;
+  font-size: 15px;
+}
+
+.dot {
+  margin: 0 8px;
+}
+
+.add-btn {
+  border-radius: 10px;
+  padding: 0 18px;
+  height: 44px;
+  box-shadow: none;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 20px;
+}
+
+.search-field {
+  width: 320px;
 }
 
 .table-wrap {
   overflow-x: auto;
-  border-radius: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
 }
 
 .candidates-table {
@@ -26,28 +92,60 @@
 }
 
 .candidates-table th {
-  font-weight: 600;
-  color: rgba(0, 0, 0, 0.7);
-  font-size: 0.75rem;
+  font-weight: 700;
+  color: #6b7280;
+  font-size: 12px;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
+  background: #f9fafb;
 }
 
 .candidates-table td,
 .candidates-table th {
-  padding: 1rem 1.25rem;
+  padding: 18px 20px;
 }
 
+.candidates-table tr.mat-mdc-row:hover,
 .candidates-table tr.mat-row:hover {
-  background: rgba(0, 0, 0, 0.02);
+  background: #f9fafb;
 }
 
-.stage-select {
-  min-width: 140px;
+.stage-field {
+  width: 150px;
+}
+
+.resume-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: #2563eb;
+  font-weight: 500;
+}
+
+.resume-link mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
 }
 
 .no-data td {
   text-align: center;
-  color: rgba(0, 0, 0, 0.5);
-  padding: 2rem;
+  color: #6b7280;
+  padding: 32px;
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .toolbar {
+    justify-content: stretch;
+  }
+
+  .search-field {
+    width: 100%;
+  }
 }
