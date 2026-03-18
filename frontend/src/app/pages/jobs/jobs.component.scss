@@ -1,12 +1,12 @@
 :host {
   display: block;
-  font-family: 'Roboto', sans-serif;
+  font-family: 'Inter', sans-serif;
   color: #111827;
 }
 
 .jobs-page {
   padding: 0;
-  max-width: 1280px;
+  max-width: 1220px;
 }
 
 .page-header {
@@ -14,7 +14,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 20px;
-  margin-bottom: 22px;
+  margin-bottom: 20px;
 }
 
 .page-heading {
@@ -33,29 +33,29 @@
 }
 
 .breadcrumb mat-icon {
-  font-size: 17px;
-  width: 17px;
-  height: 17px;
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
 }
 
 .page-title {
   margin: 0;
-  font-size: 34px;
+  font-size: 28px;
   line-height: 1.1;
   font-weight: 700;
-  letter-spacing: -0.02em;
-  color: #111827;
+  letter-spacing: -0.015em;
+  color: #0f172a;
 }
 
 .subtitle {
   margin: 0;
-  color: #6b7280;
-  font-size: 15px;
+  color: #667085;
+  font-size: 14px;
   line-height: 1.45;
 }
 
 .create-btn {
-  height: 48px;
+  height: 46px;
   border-radius: 12px;
   padding: 0 18px;
   font-size: 15px;
@@ -72,7 +72,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
   flex-wrap: wrap;
 }
 
@@ -83,7 +83,7 @@
 }
 
 .filters button {
-  min-width: 92px;
+  min-width: 88px;
   height: 40px;
   border-radius: 10px;
   font-size: 14px;
@@ -92,7 +92,7 @@
 }
 
 .search-field {
-  width: 330px;
+  width: 310px;
 }
 
 ::ng-deep .search-field .mat-mdc-text-field-wrapper {
@@ -109,7 +109,7 @@
 .table-wrap {
   overflow: hidden;
   border: 1px solid #e5e7eb;
-  border-radius: 18px;
+  border-radius: 16px;
   background: #ffffff;
 }
 
@@ -130,7 +130,7 @@
 
 .jobs-table td,
 .jobs-table th {
-  padding: 18px 20px;
+  padding: 16px 18px;
 }
 
 .jobs-table .mat-mdc-header-row,
@@ -152,7 +152,7 @@
 .job-title-cell {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .job-title {
@@ -163,23 +163,23 @@
 }
 
 .job-description {
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.4;
-  color: #6b7280;
-  max-width: 340px;
+  color: #667085;
+  max-width: 320px;
 }
 
 .status-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 68px;
+  min-width: 66px;
   height: 30px;
   padding: 0 12px;
   border-radius: 999px;
   background: #dcfce7;
   color: #16a34a;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
 }
 
@@ -193,19 +193,19 @@
   align-items: center;
   gap: 7px;
   color: #374151;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
 }
 
 .candidate-count mat-icon {
-  font-size: 18px;
-  width: 18px;
-  height: 18px;
+  font-size: 17px;
+  width: 17px;
+  height: 17px;
   color: #6b7280;
 }
 
 .no-data td {
   text-align: center;
   color: #6b7280;
-  padding: 30px;
+  padding: 28px;
 }
