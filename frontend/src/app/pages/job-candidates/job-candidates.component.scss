@@ -1,29 +1,37 @@
+:host {
+  display: block;
+  font-family: 'Roboto', sans-serif;
+  color: #111827;
+}
+
 .job-candidates-page {
   padding: 0;
+  max-width: 1400px;
 }
 
 .page-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 24px;
+  gap: 24px;
+  margin-bottom: 28px;
 }
 
 .header-top {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: 16px;
 }
 
 .back-btn {
   margin-top: 2px;
+  border-radius: 12px;
 }
 
 .heading-block {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .breadcrumb {
@@ -32,6 +40,7 @@
   gap: 6px;
   color: #6b7280;
   font-size: 14px;
+  font-weight: 500;
 }
 
 .breadcrumb mat-icon {
@@ -46,16 +55,18 @@
 
 .page-title {
   margin: 0;
-  font-size: 32px;
-  line-height: 1.1;
+  font-size: 48px;
+  line-height: 1.08;
   font-weight: 700;
+  letter-spacing: -0.02em;
   color: #111827;
 }
 
 .subtitle {
   margin: 0;
   color: #6b7280;
-  font-size: 15px;
+  font-size: 17px;
+  line-height: 1.5;
 }
 
 .dot {
@@ -63,27 +74,49 @@
 }
 
 .add-btn {
-  border-radius: 10px;
-  padding: 0 18px;
-  height: 44px;
+  height: 56px;
+  border-radius: 14px;
+  padding: 0 22px;
+  font-size: 16px;
+  font-weight: 600;
   box-shadow: none;
+}
+
+.add-btn mat-icon {
+  margin-right: 8px;
 }
 
 .toolbar {
   display: flex;
   justify-content: flex-end;
-  margin-bottom: 20px;
+  margin-bottom: 22px;
 }
 
 .search-field {
-  width: 320px;
+  width: 340px;
+}
+
+::ng-deep .search-field .mat-mdc-text-field-wrapper,
+::ng-deep .stage-field .mat-mdc-text-field-wrapper {
+  border-radius: 14px !important;
+  background: #fff;
+}
+
+::ng-deep .search-field .mdc-notched-outline__leading,
+::ng-deep .search-field .mdc-notched-outline__notch,
+::ng-deep .search-field .mdc-notched-outline__trailing,
+::ng-deep .stage-field .mdc-notched-outline__leading,
+::ng-deep .stage-field .mdc-notched-outline__notch,
+::ng-deep .stage-field .mdc-notched-outline__trailing {
+  border-color: #e5e7eb !important;
 }
 
 .table-wrap {
-  overflow-x: auto;
-  border-radius: 16px;
+  overflow: hidden;
+  border-radius: 22px;
   border: 1px solid #e5e7eb;
   background: #ffffff;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
 }
 
 .candidates-table {
@@ -92,26 +125,43 @@
 }
 
 .candidates-table th {
-  font-weight: 700;
-  color: #6b7280;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
   background: #f9fafb;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .candidates-table td,
 .candidates-table th {
-  padding: 18px 20px;
+  padding: 22px 24px;
+}
+
+.candidates-table .mat-mdc-header-row,
+.candidates-table .mat-mdc-row,
+.candidates-table .mat-row {
+  height: auto;
+}
+
+.candidates-table .mat-mdc-row,
+.candidates-table .mat-row {
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.candidates-table .mat-mdc-row:last-child,
+.candidates-table .mat-row:last-child {
+  border-bottom: none;
 }
 
 .candidates-table tr.mat-mdc-row:hover,
 .candidates-table tr.mat-row:hover {
-  background: #f9fafb;
+  background: #fcfcfd;
 }
 
 .stage-field {
-  width: 150px;
+  width: 160px;
 }
 
 .resume-link {
@@ -120,6 +170,7 @@
   gap: 8px;
   text-decoration: none;
   color: #2563eb;
+  font-size: 15px;
   font-weight: 500;
 }
 
@@ -132,10 +183,10 @@
 .no-data td {
   text-align: center;
   color: #6b7280;
-  padding: 32px;
+  padding: 36px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .page-header {
     flex-direction: column;
     align-items: stretch;
@@ -147,5 +198,16 @@
 
   .search-field {
     width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-title {
+    font-size: 38px;
+  }
+
+  .header-top {
+    flex-direction: column;
+    gap: 10px;
   }
 }
