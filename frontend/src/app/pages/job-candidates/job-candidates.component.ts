@@ -1,10 +1,13 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSelectModule } from '@angular/material/select';
+import { MatIconModule } from '@angular/material/icon';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { FormsModule } from '@angular/forms';
 import { AddCandidateDialogComponent } from './add-candidate-dialog.component';
 import { JobDataService } from '../../core/services/job-data.service';
@@ -17,10 +20,14 @@ const STAGES: CandidateStage[] = ['Applied', 'Interview', 'Selected', 'Rejected'
   standalone: true,
   imports: [
     CommonModule,
+    RouterModule,
     MatTableModule,
     MatDialogModule,
     MatButtonModule,
     MatSelectModule,
+    MatIconModule,
+    MatFormFieldModule,
+    MatInputModule,
     FormsModule,
   ],
   templateUrl: './job-candidates.component.html',
@@ -33,18 +40,21 @@ export class JobCandidatesComponent implements OnInit {
 
   jobId: number | null = null;
   jobTitle = '';
+  jobDepartment = '';
 
-  displayedColumns: string[] = ['name', 'email', 'resume', 'stage'];
+  displayedColumns = ['name', 'email', 'stage', 'resume', 'updated'];
   dataSource = new MatTableDataSource<JobCandidate>([]);
 
   readonly stages = STAGES;
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
+
     if (id) {
       this.jobId = +id;
       const job = this.jobData.getJobById(this.jobId);
       this.jobTitle = job?.title ?? `Job #${this.jobId}`;
+      this.jobDepartment = job?.department ?? '';
       this.refresh();
     }
   }
@@ -77,5 +87,6 @@ export class JobCandidatesComponent implements OnInit {
 
   onStageChange(candidate: JobCandidate, newStage: CandidateStage): void {
     this.jobData.updateCandidateStage(candidate.id, newStage);
+    this.refresh();
   }
 }
