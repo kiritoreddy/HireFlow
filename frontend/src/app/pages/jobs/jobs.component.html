@@ -1,7 +1,7 @@
 <div class="jobs-page">
   <header class="page-header">
     <div class="header-text">
-      <h1 class="page-title">Jobs</h1>
+      <h1 class="page-title" data-cy="jobs-title">Jobs</h1>
       <p class="subtitle">View and manage open and closed job postings</p>
     </div>
     <button mat-flat-button color="primary" class="add-job-btn" disabled title="Coming soon">
@@ -11,29 +11,39 @@
   </header>
 
   <div class="stats-row" aria-label="Job stats">
-    <div class="stat-card">
+    <div class="stat-card" data-cy="jobs-stat-total">
       <div class="stat-label">Total</div>
-      <div class="stat-value">{{ totalJobs }}</div>
+      <div class="stat-value" data-cy="jobs-stat-total-value">{{ totalJobs }}</div>
     </div>
-    <div class="stat-card">
+    <div class="stat-card" data-cy="jobs-stat-open">
       <div class="stat-label">Open</div>
-      <div class="stat-value open">{{ openJobs }}</div>
+      <div class="stat-value open" data-cy="jobs-stat-open-value">{{ openJobs }}</div>
     </div>
-    <div class="stat-card">
+    <div class="stat-card" data-cy="jobs-stat-closed">
       <div class="stat-label">Closed</div>
-      <div class="stat-value closed">{{ closedJobs }}</div>
+      <div class="stat-value closed" data-cy="jobs-stat-closed-value">{{ closedJobs }}</div>
     </div>
   </div>
 
   <div class="toolbar">
     <mat-form-field appearance="outline" class="search-field">
       <mat-label>Search jobs</mat-label>
-      <input matInput [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange()" placeholder="Title, description, department..." />
+      <input
+        matInput
+        data-cy="jobs-search-input"
+        [(ngModel)]="searchQuery"
+        (ngModelChange)="onSearchChange()"
+        placeholder="Title, description, department..."
+      />
       <mat-icon matPrefix>search</mat-icon>
     </mat-form-field>
     <mat-form-field appearance="outline" class="status-field">
       <mat-label>Status</mat-label>
-      <mat-select [(ngModel)]="statusFilter" (ngModelChange)="onStatusFilterChange()">
+      <mat-select
+        data-cy="jobs-status-select"
+        [(ngModel)]="statusFilter"
+        (ngModelChange)="onStatusFilterChange()"
+      >
         <mat-option value="all">All</mat-option>
         <mat-option value="Open">Open</mat-option>
         <mat-option value="Closed">Closed</mat-option>
@@ -43,6 +53,7 @@
       mat-stroked-button
       type="button"
       class="clear-btn"
+      data-cy="jobs-clear-filters-btn"
       (click)="clearFilters()"
       [disabled]="!searchQuery && statusFilter === 'all'"
     >
