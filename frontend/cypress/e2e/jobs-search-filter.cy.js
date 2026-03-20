@@ -13,7 +13,7 @@ describe('Jobs page search', () => {
       onBeforeLoad: (win) => seedLoggedInSession(win),
     });
 
-    cy.get('input[placeholder="Title, description, department..."]')
+    cy.get('[data-cy="jobs-search-input"]')
       .should('exist')
       .clear()
       .type('Designer');

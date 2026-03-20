@@ -13,13 +13,13 @@ describe('Jobs page clear filters', () => {
       onBeforeLoad: (win) => seedLoggedInSession(win),
     });
 
-    cy.get('input[placeholder="Title, description, department..."]').clear().type('Designer');
+    cy.get('[data-cy="jobs-search-input"]').clear().type('Designer');
     cy.get('table.jobs-table tr.mat-row').should('have.length', 1);
 
-    cy.get('button.clear-btn').click();
+    cy.get('[data-cy="jobs-clear-filters-btn"]').click();
 
     cy.get('table.jobs-table tr.mat-row').should('have.length', 3);
-    cy.get('input[placeholder="Title, description, department..."]').should('have.value', '');
+    cy.get('[data-cy="jobs-search-input"]').should('have.value', '');
   });
 });
 

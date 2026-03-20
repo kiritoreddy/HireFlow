@@ -13,7 +13,7 @@ describe('Jobs page status filter', () => {
       onBeforeLoad: (win) => seedLoggedInSession(win),
     });
 
-    cy.get('mat-select').first().click();
+    cy.get('[data-cy="jobs-status-select"]').click();
     cy.contains('mat-option', 'Closed').click();
 
     cy.get('table.jobs-table tr.mat-row').should('have.length', 1);
