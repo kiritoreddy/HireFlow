@@ -9,73 +9,65 @@ import { MatIconModule } from '@angular/material/icon';
   imports: [RouterLink, MatButtonModule, MatIconModule],
   template: `
     <div class="dashboard-page">
-      <div class="page-header">
-        <div>
-          <p class="eyebrow">Overview</p>
-          <h1>Dashboard</h1>
-          <p class="subtitle">
-            Welcome to HireFlow. Track hiring activity and jump into key workflows.
-          </p>
-        </div>
-      </div>
+      <p class="eyebrow">OVERVIEW</p>
+      <h1 class="page-title">Dashboard</h1>
+      <p class="subtitle">
+        Welcome to HireFlow. Track hiring activity and jump into key workflows.
+      </p>
 
-      <div class="stats-grid">
+      <section class="stats-grid">
         <div class="stat-card">
-          <div class="stat-icon blue">
+          <div class="stat-icon jobs">
             <mat-icon>work</mat-icon>
           </div>
-          <div class="stat-content">
-            <p class="stat-label">Total Jobs</p>
-            <h3>3</h3>
-            <span class="stat-note">Across all departments</span>
+          <div class="stat-copy">
+            <div class="stat-label">Total Jobs</div>
+            <div class="stat-value">3</div>
+            <div class="stat-subtext">Across all departments</div>
           </div>
         </div>
 
         <div class="stat-card">
-          <div class="stat-icon green">
+          <div class="stat-icon open">
             <mat-icon>check_circle</mat-icon>
           </div>
-          <div class="stat-content">
-            <p class="stat-label">Open Jobs</p>
-            <h3>2</h3>
-            <span class="stat-note">Currently accepting candidates</span>
+          <div class="stat-copy">
+            <div class="stat-label">Open Jobs</div>
+            <div class="stat-value">2</div>
+            <div class="stat-subtext">Currently accepting candidates</div>
           </div>
         </div>
 
         <div class="stat-card">
-          <div class="stat-icon purple">
+          <div class="stat-icon candidates">
             <mat-icon>groups</mat-icon>
           </div>
-          <div class="stat-content">
-            <p class="stat-label">Candidates</p>
-            <h3>2</h3>
-            <span class="stat-note">Tracked in the pipeline</span>
+          <div class="stat-copy">
+            <div class="stat-label">Candidates</div>
+            <div class="stat-value">2</div>
+            <div class="stat-subtext">Tracked in the pipeline</div>
           </div>
         </div>
 
         <div class="stat-card">
-          <div class="stat-icon orange">
+          <div class="stat-icon users">
             <mat-icon>group</mat-icon>
           </div>
-          <div class="stat-content">
-            <p class="stat-label">Users</p>
-            <h3>5</h3>
-            <span class="stat-note">Internal system users</span>
+          <div class="stat-copy">
+            <div class="stat-label">Users</div>
+            <div class="stat-value">5</div>
+            <div class="stat-subtext">Internal system users</div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div class="dashboard-grid">
-        <section class="panel">
-          <div class="panel-header">
-            <div>
-              <h2>Quick Actions</h2>
-              <p>Open the most important sections quickly.</p>
-            </div>
-          </div>
+      <section class="content-grid">
+        <div class="panel quick-actions">
+          <h2>Quick Actions</h2>
+          <p>Open the most important sections quickly.</p>
 
-          <div class="action-grid">
-            <a mat-flat-button color="primary" routerLink="/jobs" class="action-btn">
+          <div class="action-row">
+            <a mat-stroked-button routerLink="/jobs" class="action-btn">
               <mat-icon>work</mat-icon>
               View Jobs
             </a>
@@ -90,39 +82,32 @@ import { MatIconModule } from '@angular/material/icon';
               Manage Users
             </a>
           </div>
-        </section>
+        </div>
 
-        <section class="panel">
-          <div class="panel-header">
-            <div>
-              <h2>Hiring Summary</h2>
-              <p>Current snapshot of your hiring workflow.</p>
-            </div>
-          </div>
+        <div class="panel hiring-summary">
+          <h2>Hiring Summary</h2>
+          <p>Current snapshot of your hiring workflow.</p>
 
           <div class="summary-list">
             <div class="summary-row">
-              <span class="summary-label">Engineering</span>
-              <span class="summary-value">1 active role</span>
+              <span>Engineering</span>
+              <span>1 active role</span>
             </div>
-
             <div class="summary-row">
-              <span class="summary-label">Design</span>
-              <span class="summary-value">1 active role</span>
+              <span>Design</span>
+              <span>1 active role</span>
             </div>
-
             <div class="summary-row">
-              <span class="summary-label">Analytics</span>
-              <span class="summary-value">1 closed role</span>
+              <span>Analytics</span>
+              <span>1 closed role</span>
             </div>
-
-            <div class="summary-row">
-              <span class="summary-label">Latest update</span>
-              <span class="summary-value">Candidates page styled and wired locally</span>
+            <div class="summary-row latest">
+              <span>Latest update</span>
+              <span>Candidates page styled and wired locally</span>
             </div>
           </div>
-        </section>
-      </div>
+        </div>
+      </section>
     </div>
   `,
   styles: [
@@ -133,218 +118,231 @@ import { MatIconModule } from '@angular/material/icon';
       }
 
       .dashboard-page {
-        max-width: 1240px;
-      }
-
-      .page-header {
-        margin-bottom: 24px;
+        padding: 12px 8px 24px;
       }
 
       .eyebrow {
         margin: 0 0 8px;
-        font-size: 13px;
-        font-weight: 700;
+        color: #315fcb;
+        font-size: 14px;
+        font-weight: 800;
         letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: #2563eb;
       }
 
-      h1 {
-        margin: 0 0 8px;
-        font-size: 28px;
+      .page-title {
+        margin: 0;
+        font-size: 32px;
         line-height: 1.1;
         font-weight: 800;
         color: #0f172a;
+        letter-spacing: -0.03em;
       }
 
       .subtitle {
-        margin: 0;
+        margin: 10px 0 28px;
         color: #667085;
-        font-size: 15px;
-        line-height: 1.5;
+        font-size: 16px;
+        line-height: 1.6;
       }
 
       .stats-grid {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 18px;
+        gap: 20px;
         margin-bottom: 24px;
       }
 
       .stat-card {
         display: flex;
+        gap: 16px;
         align-items: flex-start;
-        gap: 14px;
-        padding: 20px;
         background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 20px;
-        box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+        border: 1px solid #e4e7ec;
+        border-radius: 24px;
+        padding: 22px;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
       }
 
       .stat-icon {
-        width: 44px;
-        height: 44px;
-        border-radius: 14px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
+        width: 56px;
+        height: 56px;
+        border-radius: 18px;
+        display: grid;
+        place-items: center;
         flex-shrink: 0;
       }
 
       .stat-icon mat-icon {
-        font-size: 22px;
-        width: 22px;
-        height: 22px;
+        font-size: 26px;
+        width: 26px;
+        height: 26px;
       }
 
-      .stat-icon.blue {
-        background: #dbeafe;
-        color: #2563eb;
+      .stat-icon.jobs {
+        background: #dbe7ff;
+        color: #315fcb;
       }
 
-      .stat-icon.green {
-        background: #dcfce7;
-        color: #16a34a;
+      .stat-icon.open {
+        background: #dff3e4;
+        color: #3b9c52;
       }
 
-      .stat-icon.purple {
-        background: #ede9fe;
+      .stat-icon.candidates {
+        background: #ece6ff;
         color: #7c3aed;
       }
 
-      .stat-icon.orange {
-        background: #ffedd5;
-        color: #ea580c;
+      .stat-icon.users {
+        background: #f7e7cf;
+        color: #dd6b20;
       }
 
-      .stat-content {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
+      .stat-copy {
+        min-width: 0;
       }
 
       .stat-label {
-        margin: 0;
-        font-size: 14px;
         color: #667085;
-        font-weight: 600;
+        font-size: 14px;
+        font-weight: 700;
+        margin-bottom: 4px;
       }
 
-      .stat-content h3 {
-        margin: 0;
-        font-size: 28px;
-        line-height: 1;
-        font-weight: 800;
+      .stat-value {
         color: #0f172a;
+        font-size: 22px;
+        font-weight: 800;
+        line-height: 1;
+        margin-bottom: 8px;
       }
 
-      .stat-note {
-        font-size: 13px;
-        color: #94a3b8;
+      .stat-subtext {
+        color: #98a2b3;
+        font-size: 14px;
+        line-height: 1.4;
       }
 
-      .dashboard-grid {
+      .content-grid {
         display: grid;
-        grid-template-columns: 1.2fr 1fr;
+        grid-template-columns: 1.25fr 1fr;
         gap: 20px;
       }
 
       .panel {
         background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 20px;
-        padding: 22px;
-        box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+        border: 1px solid #e4e7ec;
+        border-radius: 24px;
+        padding: 28px;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
       }
 
-      .panel-header {
-        margin-bottom: 18px;
-      }
-
-      .panel-header h2 {
+      .panel h2 {
         margin: 0 0 6px;
-        font-size: 18px;
-        font-weight: 700;
+        font-size: 20px;
+        font-weight: 800;
         color: #0f172a;
       }
 
-      .panel-header p {
-        margin: 0;
-        font-size: 14px;
+      .panel p {
+        margin: 0 0 22px;
         color: #667085;
+        font-size: 15px;
       }
 
-      .action-grid {
+      .action-row {
         display: flex;
+        gap: 14px;
         flex-wrap: wrap;
-        gap: 12px;
       }
 
       .action-btn {
-        min-height: 44px;
-        border-radius: 12px;
-        font-weight: 600;
+        height: 48px;
+        padding: 0 18px;
+        border-radius: 14px;
+        border-color: #d0d5dd !important;
+        background: #ffffff !important;
+        color: #344054 !important;
+        font-weight: 700;
+        transition: all 0.18s ease;
       }
 
       .action-btn mat-icon {
-        margin-right: 6px;
+        color: #667085 !important;
+        transition: color 0.18s ease;
+      }
+
+      .action-btn:hover {
+        background: #f8fafc !important;
+        border-color: #bfc7d4 !important;
+        color: #1d4ed8 !important;
+        transform: translateY(-1px);
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+      }
+
+      .action-btn:hover mat-icon {
+        color: #1d4ed8 !important;
       }
 
       .summary-list {
         display: flex;
         flex-direction: column;
-        gap: 14px;
+        gap: 0;
       }
 
       .summary-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        gap: 12px;
-        padding-bottom: 12px;
-        border-bottom: 1px solid #f1f5f9;
+        padding: 16px 0;
+        border-top: 1px solid #eaecf0;
+        color: #344054;
+        font-size: 15px;
       }
 
-      .summary-row:last-child {
-        border-bottom: none;
-        padding-bottom: 0;
+      .summary-row:first-child {
+        border-top: none;
+        padding-top: 0;
       }
 
-      .summary-label {
-        font-size: 14px;
-        font-weight: 600;
-        color: #334155;
+      .summary-row span:first-child {
+        font-weight: 700;
       }
 
-      .summary-value {
-        font-size: 14px;
+      .summary-row span:last-child {
         color: #667085;
+      }
+
+      .summary-row.latest span:last-child {
+        max-width: 280px;
         text-align: right;
       }
 
-      @media (max-width: 1100px) {
+      @media (max-width: 1200px) {
         .stats-grid {
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
-        .dashboard-grid {
+        .content-grid {
           grid-template-columns: 1fr;
         }
       }
 
-      @media (max-width: 640px) {
+      @media (max-width: 768px) {
+        .dashboard-page {
+          padding: 4px 0 16px;
+        }
+
+        .page-title {
+          font-size: 28px;
+        }
+
         .stats-grid {
           grid-template-columns: 1fr;
         }
 
-        h1 {
-          font-size: 24px;
-        }
-
-        .panel,
-        .stat-card {
-          padding: 18px;
+        .panel {
+          padding: 20px;
         }
       }
     `,

@@ -24,10 +24,17 @@
 .login-brand {
   display: inline-flex;
   align-items: center;
-  margin: 2px 8px 6px;
-  font-size: 14px;
+  margin: 2px 8px 8px;
+  font-size: 15px;
   font-weight: 800;
   letter-spacing: -0.02em;
+}
+
+.brand-dark {
+  color: #0f172a;
+}
+
+.brand-accent {
   color: #2563eb;
 }
 

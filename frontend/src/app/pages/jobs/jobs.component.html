@@ -18,30 +18,59 @@
 
   <div class="toolbar">
     <div class="filters">
-      <button
-        mat-flat-button
-        [color]="selectedFilter === 'All' ? 'primary' : undefined"
-        [ngClass]="{ 'active-filter': selectedFilter === 'All' }"
-        (click)="setFilter('All')"
-      >
-        All Jobs
-      </button>
+      @if (selectedFilter === 'All') {
+        <button
+          mat-flat-button
+          color="primary"
+          class="active-filter"
+          (click)="setFilter('All')"
+        >
+          All Jobs
+        </button>
+      } @else {
+        <button
+          mat-stroked-button
+          (click)="setFilter('All')"
+        >
+          All Jobs
+        </button>
+      }
 
-      <button
-        mat-stroked-button
-        [ngClass]="{ 'active-filter': selectedFilter === 'Open' }"
-        (click)="setFilter('Open')"
-      >
-        Open
-      </button>
+      @if (selectedFilter === 'Open') {
+        <button
+          mat-flat-button
+          color="primary"
+          class="active-filter"
+          (click)="setFilter('Open')"
+        >
+          Open
+        </button>
+      } @else {
+        <button
+          mat-stroked-button
+          (click)="setFilter('Open')"
+        >
+          Open
+        </button>
+      }
 
-      <button
-        mat-stroked-button
-        [ngClass]="{ 'active-filter': selectedFilter === 'Closed' }"
-        (click)="setFilter('Closed')"
-      >
-        Closed
-      </button>
+      @if (selectedFilter === 'Closed') {
+        <button
+          mat-flat-button
+          color="primary"
+          class="active-filter"
+          (click)="setFilter('Closed')"
+        >
+          Closed
+        </button>
+      } @else {
+        <button
+          mat-stroked-button
+          (click)="setFilter('Closed')"
+        >
+          Closed
+        </button>
+      }
     </div>
 
     <mat-form-field appearance="outline" class="search-field">
