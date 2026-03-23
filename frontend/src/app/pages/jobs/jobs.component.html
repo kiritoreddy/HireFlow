@@ -10,7 +10,7 @@
       <p class="subtitle">Manage your job postings and track candidates</p>
     </div>
 
-    <button mat-flat-button color="primary" class="create-btn">
+    <button mat-flat-button color="primary" class="create-btn" (click)="onCreateJobClick()">
       <mat-icon>add</mat-icon>
       Create Job
     </button>
@@ -18,14 +18,40 @@
 
   <div class="toolbar">
     <div class="filters">
-      <button mat-flat-button color="primary">All Jobs</button>
-      <button mat-stroked-button>Open</button>
-      <button mat-stroked-button>Closed</button>
+      <button
+        mat-flat-button
+        [color]="selectedFilter === 'All' ? 'primary' : undefined"
+        [ngClass]="{ 'active-filter': selectedFilter === 'All' }"
+        (click)="setFilter('All')"
+      >
+        All Jobs
+      </button>
+
+      <button
+        mat-stroked-button
+        [ngClass]="{ 'active-filter': selectedFilter === 'Open' }"
+        (click)="setFilter('Open')"
+      >
+        Open
+      </button>
+
+      <button
+        mat-stroked-button
+        [ngClass]="{ 'active-filter': selectedFilter === 'Closed' }"
+        (click)="setFilter('Closed')"
+      >
+        Closed
+      </button>
     </div>
 
     <mat-form-field appearance="outline" class="search-field">
       <mat-icon matPrefix>search</mat-icon>
-      <input matInput placeholder="Search by title or department..." [(ngModel)]="searchTerm" />
+      <input
+        matInput
+        placeholder="Search by title or department..."
+        [(ngModel)]="searchTerm"
+        (ngModelChange)="onSearchChange()"
+      />
     </mat-form-field>
   </div>
 
@@ -96,7 +122,7 @@
 
       <tr class="mat-row no-data" *matNoDataRow>
         <td class="mat-cell" [attr.colspan]="displayedColumns.length">
-          No jobs yet.
+          No jobs found.
         </td>
       </tr>
     </table>

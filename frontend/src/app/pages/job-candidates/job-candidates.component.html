@@ -30,7 +30,12 @@
   <div class="toolbar">
     <mat-form-field appearance="outline" class="search-field">
       <mat-icon matPrefix>search</mat-icon>
-      <input matInput placeholder="Search candidates..." />
+      <input
+        matInput
+        placeholder="Search candidates..."
+        [(ngModel)]="searchTerm"
+        (ngModelChange)="applySearch()"
+      />
     </mat-form-field>
   </div>
 
@@ -82,7 +87,7 @@
 
       <tr class="mat-row no-data" *matNoDataRow>
         <td class="mat-cell" [attr.colspan]="displayedColumns.length">
-          No candidates yet. Add one to get started.
+          No candidates found.
         </td>
       </tr>
     </table>

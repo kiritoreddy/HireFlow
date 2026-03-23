@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
@@ -8,7 +9,6 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { FormsModule } from '@angular/forms';
 import { AddCandidateDialogComponent } from './add-candidate-dialog.component';
 import { JobDataService } from '../../core/services/job-data.service';
 import { JobCandidate, CandidateStage } from '../../core/models/candidate.model';
@@ -21,6 +21,7 @@ const STAGES: CandidateStage[] = ['Applied', 'Interview', 'Selected', 'Rejected'
   imports: [
     CommonModule,
     RouterModule,
+    FormsModule,
     MatTableModule,
     MatDialogModule,
     MatButtonModule,
@@ -28,7 +29,6 @@ const STAGES: CandidateStage[] = ['Applied', 'Interview', 'Selected', 'Rejected'
     MatIconModule,
     MatFormFieldModule,
     MatInputModule,
-    FormsModule,
   ],
   templateUrl: './job-candidates.component.html',
   styleUrl: './job-candidates.component.scss',
@@ -41,9 +41,11 @@ export class JobCandidatesComponent implements OnInit {
   jobId: number | null = null;
   jobTitle = '';
   jobDepartment = '';
+  searchTerm = '';
 
   displayedColumns = ['name', 'email', 'stage', 'resume', 'updated'];
   dataSource = new MatTableDataSource<JobCandidate>([]);
+  allCandidates: JobCandidate[] = [];
 
   readonly stages = STAGES;
 
@@ -61,13 +63,27 @@ export class JobCandidatesComponent implements OnInit {
 
   refresh(): void {
     if (this.jobId != null) {
-      this.dataSource.data = this.jobData.getCandidatesForJob(this.jobId);
+      this.allCandidates = this.jobData.getCandidatesForJob(this.jobId);
+      this.applySearch();
     }
+  }
+
+  applySearch(): void {
+    const search = this.searchTerm.trim().toLowerCase();
+
+    this.dataSource.data = this.allCandidates.filter((candidate) => {
+      return (
+        !search ||
+        candidate.name.toLowerCase().includes(search) ||
+        candidate.email.toLowerCase().includes(search)
+      );
+    });
   }
 
   openAddCandidateDialog(): void {
     const dialogRef = this.dialog.open(AddCandidateDialogComponent, {
-      width: '450px',
+      width: '520px',
+      maxWidth: '95vw',
       disableClose: true,
     });
 
