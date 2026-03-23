@@ -14,6 +14,7 @@ import { JobDataService } from '../../core/services/job-data.service';
 import { JobCandidate, CandidateStage } from '../../core/models/candidate.model';
 
 const STAGES: CandidateStage[] = ['Applied', 'Interview', 'Selected', 'Rejected'];
+type CandidateFilter = 'All' | CandidateStage;
 
 @Component({
   selector: 'app-job-candidates',
@@ -42,6 +43,7 @@ export class JobCandidatesComponent implements OnInit {
   jobTitle = '';
   jobDepartment = '';
   searchTerm = '';
+  selectedStageFilter: CandidateFilter = 'All';
 
   displayedColumns = ['name', 'email', 'stage', 'resume', 'updated'];
   dataSource = new MatTableDataSource<JobCandidate>([]);
@@ -64,19 +66,33 @@ export class JobCandidatesComponent implements OnInit {
   refresh(): void {
     if (this.jobId != null) {
       this.allCandidates = this.jobData.getCandidatesForJob(this.jobId);
-      this.applySearch();
+      this.applyFilters();
     }
   }
 
+  setStageFilter(filter: CandidateFilter): void {
+    this.selectedStageFilter = filter;
+    this.applyFilters();
+  }
+
   applySearch(): void {
+    this.applyFilters();
+  }
+
+  applyFilters(): void {
     const search = this.searchTerm.trim().toLowerCase();
 
     this.dataSource.data = this.allCandidates.filter((candidate) => {
-      return (
+      const matchesSearch =
         !search ||
         candidate.name.toLowerCase().includes(search) ||
-        candidate.email.toLowerCase().includes(search)
-      );
+        candidate.email.toLowerCase().includes(search);
+
+      const matchesStage =
+        this.selectedStageFilter === 'All' ||
+        candidate.stage === this.selectedStageFilter;
+
+      return matchesSearch && matchesStage;
     });
   }
 

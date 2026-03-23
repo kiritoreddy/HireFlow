@@ -113,6 +113,16 @@
               <mat-icon>group</mat-icon>
               <span>View Candidates</span>
             </button>
+
+            <button mat-menu-item (click)="editJob(row)">
+              <mat-icon>edit</mat-icon>
+              <span>Edit Job</span>
+            </button>
+
+            <button mat-menu-item (click)="toggleJobStatus(row)">
+              <mat-icon>{{ row.status === 'Open' ? 'cancel' : 'check_circle' }}</mat-icon>
+              <span>{{ row.status === 'Open' ? 'Close Job' : 'Reopen Job' }}</span>
+            </button>
           </mat-menu>
         </td>
       </ng-container>

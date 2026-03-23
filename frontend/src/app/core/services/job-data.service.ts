@@ -74,6 +74,29 @@ export class JobDataService {
     return map;
   }
 
+  addJob(job: Omit<Job, 'id'>): Job {
+    const currentJobs = this.jobs();
+    const nextId = currentJobs.length ? Math.max(...currentJobs.map((j) => j.id)) + 1 : 1;
+    const newJob: Job = {
+      ...job,
+      id: nextId,
+    };
+    this.jobs.update((list) => [...list, newJob]);
+    return newJob;
+  }
+
+  updateJob(id: number, updates: Partial<Omit<Job, 'id'>>): void {
+    this.jobs.update((list) =>
+      list.map((job) => (job.id === id ? { ...job, ...updates } : job))
+    );
+  }
+
+  setJobStatus(id: number, status: Job['status']): void {
+    this.jobs.update((list) =>
+      list.map((job) => (job.id === id ? { ...job, status } : job))
+    );
+  }
+
   addCandidate(candidate: Omit<JobCandidate, 'id'>): JobCandidate {
     const id = 'c' + crypto.randomUUID().slice(0, 8);
     const newCandidate: JobCandidate = { ...candidate, id };

@@ -37,6 +37,19 @@
         (ngModelChange)="applySearch()"
       />
     </mat-form-field>
+
+    <mat-form-field appearance="outline" class="stage-filter-field">
+      <mat-label>Filter by stage</mat-label>
+      <mat-select
+        [(ngModel)]="selectedStageFilter"
+        (selectionChange)="setStageFilter($event.value)"
+      >
+        <mat-option value="All">All</mat-option>
+        @for (s of stages; track s) {
+          <mat-option [value]="s">{{ s }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
   </div>
 
   <div class="table-wrap">
