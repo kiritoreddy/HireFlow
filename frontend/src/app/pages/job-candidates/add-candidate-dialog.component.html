@@ -1,32 +1,39 @@
-<h2>Add Candidate</h2>
+<h2 mat-dialog-title class="dialog-title">Add Candidate</h2>
 
-<div style="display: flex; flex-direction: column; gap: 16px;">
-  <mat-form-field appearance="outline">
-    <mat-label>Name</mat-label>
-    <input matInput [(ngModel)]="name" />
+<mat-dialog-content class="dialog-content">
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Full name</mat-label>
+    <input matInput [(ngModel)]="name" name="name" autocomplete="name" />
   </mat-form-field>
 
-  <mat-form-field appearance="outline">
-    <mat-label>Gmail</mat-label>
-    <input matInput type="email" [(ngModel)]="email" />
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Email</mat-label>
+    <input
+      matInput
+      [(ngModel)]="email"
+      name="email"
+      type="email"
+      autocomplete="email"
+    />
   </mat-form-field>
 
-  <div>
-    <label><strong>Resume</strong></label><br />
-    <input #fileInput type="file" (change)="onFileChange($event)" />
+  <div class="resume-section">
+    <label class="resume-label" for="resumeFile">Resume</label>
+    <input
+      #fileInput
+      id="resumeFile"
+      type="file"
+      accept=".pdf,.doc,.docx"
+      (change)="onFileChange($event)"
+      class="file-input"
+    />
+    <p class="file-text">{{ resume || 'No file selected' }}</p>
   </div>
-</div>
+</mat-dialog-content>
 
-<div
-  style="
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    margin-top: 20px;
-  "
->
-  <button mat-button (click)="cancel()">Cancel</button>
-  <button mat-raised-button color="primary" (click)="addCandidate()">
+<mat-dialog-actions align="end" class="dialog-actions">
+  <button mat-button type="button" (click)="cancel()">Cancel</button>
+  <button mat-flat-button color="primary" type="button" (click)="addCandidate()">
     Add Candidate
   </button>
-</div>
+</mat-dialog-actions>
