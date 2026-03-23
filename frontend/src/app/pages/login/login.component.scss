@@ -14,15 +14,25 @@
 
 .login-card {
   width: 100%;
-  max-width: 430px;
-  border-radius: 20px;
+  max-width: 640px;
+  border-radius: 22px;
   border: 1px solid #e5e7eb;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
-  padding: 12px;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
+  padding: 18px;
+}
+
+.login-brand {
+  display: inline-flex;
+  align-items: center;
+  margin: 2px 8px 6px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #2563eb;
 }
 
 .login-header {
-  padding: 8px 8px 0;
+  padding: 4px 8px 0;
   margin-bottom: 10px;
   display: block;
 }
@@ -34,24 +44,25 @@
 
 ::ng-deep .login-card .mat-mdc-card-title {
   display: block;
-  font-size: 24px;
-  line-height: 1.15;
-  font-weight: 700;
+  font-size: 28px;
+  line-height: 1.12;
+  font-weight: 800;
   color: #0f172a;
   margin: 0;
+  letter-spacing: -0.03em;
 }
 
 .login-subtitle {
   margin: 8px 0 0;
   color: #667085;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.45;
 }
 
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   padding-top: 6px;
 }
 
@@ -64,7 +75,7 @@
 }
 
 ::ng-deep .login-card .mat-mdc-text-field-wrapper {
-  border-radius: 12px !important;
+  border-radius: 14px !important;
   background: #ffffff;
 }
 
@@ -75,26 +86,40 @@
 }
 
 ::ng-deep .login-card .mat-mdc-form-field-infix {
-  min-height: 54px;
+  min-height: 56px;
   padding-top: 14px !important;
   padding-bottom: 14px !important;
 }
 
+.password-toggle {
+  color: #667085;
+}
+
+.password-toggle:hover {
+  color: #344054;
+}
+
 .submit-btn {
   width: 100%;
-  height: 48px;
+  height: 50px;
   margin-top: 6px;
-  border-radius: 12px;
+  border-radius: 16px;
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
   box-shadow: none;
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+.submit-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.18);
 }
 
 .forgot-link {
   align-self: center;
   margin-top: 2px;
-  color: #111827;
-  font-weight: 600;
+  color: #1d4ed8;
+  font-weight: 700;
 }
 
 .error {
@@ -110,4 +135,33 @@
   font-size: 13px;
   line-height: 1.4;
   text-align: center;
+}
+
+@media (max-width: 768px) {
+  .login-card {
+    max-width: 100%;
+    padding: 14px;
+  }
+
+  ::ng-deep .login-card .mat-mdc-card-title {
+    font-size: 25px;
+  }
+
+  .login-subtitle {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-page {
+    padding: 16px;
+  }
+
+  .login-card {
+    border-radius: 18px;
+  }
+
+  ::ng-deep .login-card .mat-mdc-card-title {
+    font-size: 23px;
+  }
 }

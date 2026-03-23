@@ -1,5 +1,7 @@
 <div class="login-page">
   <mat-card class="login-card">
+    <div class="login-brand">HireFlow</div>
+
     <mat-card-header class="login-header">
       <mat-card-title>Sign in to HireFlow</mat-card-title>
       <p class="login-subtitle">Welcome back. Please enter your details.</p>
@@ -25,10 +27,22 @@
             matInput
             [(ngModel)]="password"
             name="password"
-            type="password"
+            [type]="hidePassword ? 'password' : 'text'"
             required
             autocomplete="current-password"
           />
+
+          <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            class="password-toggle"
+            (click)="hidePassword = !hidePassword"
+            [attr.aria-label]="hidePassword ? 'Show password' : 'Hide password'"
+            [attr.aria-pressed]="!hidePassword"
+          >
+            <mat-icon>{{ hidePassword ? 'visibility' : 'visibility_off' }}</mat-icon>
+          </button>
         </mat-form-field>
 
         @if (error) {
