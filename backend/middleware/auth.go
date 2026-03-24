@@ -63,3 +63,31 @@ func RequireAdmin(next http.HandlerFunc) http.HandlerFunc {
 		next.ServeHTTP(w, r)
 	}
 }
+
+// RequireRole ensures the authenticated user has one of the specified roles.
+// Use after RequireAuth.
+// Returns 403 if user role is not in the allowed roles list.
+func RequireRole(roles ...string) func(http.HandlerFunc) http.HandlerFunc {
+	return func(next http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			claims, ok := r.Context().Value(claimsKey).(*utils.JWTClaims)
+			if !ok || claims == nil {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusForbidden)
+				json.NewEncoder(w).Encode(map[string]string{"error": "Forbidden"})
+				return
+			}
+			// Check if user's role matches any of the allowed roles
+			for _, role := range roles {
+				if claims.Role == role {
+					next.ServeHTTP(w, r)
+					return
+				}
+			}
+			// Role not in allowed list
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusForbidden)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Insufficient permissions"})
+		}
+	}
+}
