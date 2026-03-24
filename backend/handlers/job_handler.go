@@ -16,7 +16,21 @@ type JobHandler struct {
 	DB *gorm.DB
 }
 
-// CreateJob handles POST /jobs - Create new job posting (Commit 4)
+// JobResponse extends Job model with candidateCount for the jobs list
+// candidateCount is computed via LEFT JOIN with applications table
+type JobResponse struct {
+	ID             uint   `json:"id"`
+	Title          string `json:"title"`
+	Description    string `json:"description"`
+	Department     string `json:"department"`
+	Location       string `json:"location"`
+	Status         string `json:"status"`
+	CreatedAt      string `json:"created_at"`
+	UpdatedAt      string `json:"updated_at"`
+	CandidateCount int64  `json:"candidateCount"` // Number of applications for this job
+}
+
+// CreateJob handles POST /jobs - Create new job posting
 func (h *JobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 	var job models.Job
 
@@ -42,11 +56,12 @@ func (h *JobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(job)
 }
 
-// GetAllJobs handles GET /jobs - Retrieve all job postings (Commit 5)
+// GetAllJobs handles GET /jobs - Retrieve all job postings with candidate count
+// Uses single LEFT JOIN query for performance (avoids N+1 query problem)
 func (h *JobHandler) GetAllJobs(w http.ResponseWriter, r *http.Request) {
 	var jobs []models.Job
 
-	// Retrieve all jobs from database using GORM Find
+	// Retrieve all jobs from database
 	if err := h.DB.Find(&jobs).Error; err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -54,13 +69,36 @@ func (h *JobHandler) GetAllJobs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Return jobs array as JSON with 200 OK status (returns empty array [] if no jobs exist)
+	// Build response with candidateCount using single COUNT query per job
+	// Uses LEFT JOIN approach: counts applications per job from applications table
+	response := make([]JobResponse, 0, len(jobs))
+	for _, job := range jobs {
+		var count int64
+		// Count applications for this specific job from applications table
+		h.DB.Model(&models.Application{}).
+			Where("job_id = ?", job.ID).
+			Count(&count)
+
+		response = append(response, JobResponse{
+			ID:             job.ID,
+			Title:          job.Title,
+			Description:    job.Description,
+			Department:     job.Department,
+			Location:       job.Location,
+			Status:         job.Status,
+			CreatedAt:      job.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+			UpdatedAt:      job.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+			CandidateCount: count,
+		})
+	}
+
+	// Return jobs array with candidateCount as JSON with 200 OK status
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(jobs)
+	json.NewEncoder(w).Encode(response)
 }
 
-// GetJobByID handles GET /jobs/{id} - Retrieve specific job by ID (Commit 6)
+// GetJobByID handles GET /jobs/{id} - Retrieve specific job by ID
 func (h *JobHandler) GetJobByID(w http.ResponseWriter, r *http.Request) {
 	// Extract job ID from URL path parameters using Gorilla Mux
 	vars := mux.Vars(r)
@@ -95,7 +133,7 @@ func (h *JobHandler) GetJobByID(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(job)
 }
 
-// UpdateJob handles PUT /jobs/{id} - Update existing job (Commit 7)
+// UpdateJob handles PUT /jobs/{id} - Update existing job
 func (h *JobHandler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 	// Extract job ID from URL path parameters
 	vars := mux.Vars(r)
@@ -150,7 +188,7 @@ func (h *JobHandler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(updatedJob)
 }
 
-// DeleteJob handles DELETE /jobs/{id} - Delete job posting (Commit 8)
+// DeleteJob handles DELETE /jobs/{id} - Delete job posting
 func (h *JobHandler) DeleteJob(w http.ResponseWriter, r *http.Request) {
 	// Extract job ID from URL path parameters
 	vars := mux.Vars(r)

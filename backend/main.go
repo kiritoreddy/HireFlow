@@ -3,8 +3,8 @@ package main
 import (
 	"backend/config"
 	"backend/models"
-
 	"backend/routes"
+	"backend/seeder"
 	"log"
 	"net/http"
 )
@@ -24,6 +24,9 @@ func main() {
 	); err != nil {
 		log.Fatal("failed to migrate database:", err)
 	}
+
+	// Seed default admin user if none exists
+	seeder.SeedAdmin(db)
 
 	// Setup routes with CORS middleware
 	handler := routes.SetupRoutes(db)
