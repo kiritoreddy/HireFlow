@@ -21,7 +21,7 @@ describe('JobsApiService', () => {
     httpMock.verify();
   });
 
-  it('list maps rows to Job', async () => {
+  it('getJobs maps rows to Job', async () => {
     const row = {
       id: 1,
       title: 'T',
@@ -38,7 +38,7 @@ describe('JobsApiService', () => {
       rejectedCount: 0,
     };
 
-    const promise = firstValueFrom(service.list());
+    const promise = firstValueFrom(service.getJobs());
     const req = httpMock.expectOne(JOBS_ENDPOINTS.list);
     expect(req.request.method).toBe('GET');
     req.flush([row]);
@@ -53,9 +53,9 @@ describe('JobsApiService', () => {
     });
   });
 
-  it('create posts body and maps response', async () => {
+  it('createJob posts body and maps response', async () => {
     const promise = firstValueFrom(
-      service.create({
+      service.createJob({
         title: 'New',
         description: 'x',
         department: 'd',
@@ -63,7 +63,6 @@ describe('JobsApiService', () => {
         status: 'Open',
       })
     );
-
     const req = httpMock.expectOne(JOBS_ENDPOINTS.list);
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toMatchObject({ title: 'New', status: 'Open' });
@@ -75,7 +74,6 @@ describe('JobsApiService', () => {
       location: 'l',
       status: 'Open',
     });
-
     const j = await promise;
     expect(j.title).toBe('New');
   });

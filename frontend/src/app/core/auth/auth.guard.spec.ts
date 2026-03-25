@@ -4,15 +4,11 @@ import { vi } from 'vitest';
 import { authGuard } from './auth.guard';
 import { AuthService } from './auth.service';
 
-function mockAuth(partial: { isLoggedIn: () => boolean }): AuthService {
-  return partial as unknown as AuthService;
-}
-
 describe('authGuard', () => {
   it('allows navigation when logged in', () => {
     TestBed.configureTestingModule({
       providers: [
-        { provide: AuthService, useValue: mockAuth({ isLoggedIn: () => true }) },
+        { provide: AuthService, useValue: { isLoggedIn: () => true } },
         { provide: Router, useValue: { createUrlTree: vi.fn() } },
       ],
     });
@@ -27,7 +23,7 @@ describe('authGuard', () => {
 
     TestBed.configureTestingModule({
       providers: [
-        { provide: AuthService, useValue: mockAuth({ isLoggedIn: () => false }) },
+        { provide: AuthService, useValue: { isLoggedIn: () => false } },
         { provide: Router, useValue: { createUrlTree } },
       ],
     });

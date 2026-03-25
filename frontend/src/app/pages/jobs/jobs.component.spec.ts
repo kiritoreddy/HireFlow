@@ -1,7 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { of } from 'rxjs';
-import { vi } from 'vitest';
 import { JobsComponent } from './jobs.component';
 import { JobsApiService } from '../../core/services/jobs-api.service';
 import { Job } from '../../core/models/job.model';
@@ -9,30 +8,42 @@ import { Job } from '../../core/models/job.model';
 const mockJobs: Job[] = [
   {
     id: 1,
-    title: 'Product Designer',
-    description: 'Design',
-    department: 'Design',
+    title: 'Senior Software Engineer',
+    description: 'Build web apps.',
+    department: 'Engineering',
     location: 'Remote',
     status: 'Open',
     candidateCount: 1,
+    appliedCount: 1,
+    interviewCount: 0,
+    selectedCount: 0,
+    rejectedCount: 0,
   },
   {
     id: 2,
-    title: 'Senior Software Engineer',
-    description: 'Build',
-    department: 'Engineering',
-    location: 'Remote',
+    title: 'Product Designer',
+    description: 'Design UX.',
+    department: 'Design',
+    location: 'San Francisco',
     status: 'Open',
     candidateCount: 0,
+    appliedCount: 0,
+    interviewCount: 0,
+    selectedCount: 0,
+    rejectedCount: 0,
   },
   {
     id: 3,
-    title: 'Legacy Role',
-    description: 'Old',
-    department: 'Engineering',
-    location: 'On-site',
+    title: 'Data Analyst',
+    description: 'Analyze data.',
+    department: 'Analytics',
+    location: 'New York',
     status: 'Closed',
     candidateCount: 0,
+    appliedCount: 0,
+    interviewCount: 0,
+    selectedCount: 0,
+    rejectedCount: 0,
   },
 ];
 
@@ -52,9 +63,10 @@ describe('JobsComponent', () => {
         {
           provide: JobsApiService,
           useValue: {
-            list: () => of(mockJobs),
-            create: vi.fn(() => of(mockJobs[0])),
-            update: vi.fn(() => of(mockJobs[0])),
+            getJobs: () => of(mockJobs),
+            createJob: () => of({}),
+            updateJob: () => of({}),
+            deleteJob: () => of(void 0),
           },
         },
         {
@@ -64,8 +76,9 @@ describe('JobsComponent', () => {
       ],
     }).compileComponents();
 
-    component = TestBed.createComponent(JobsComponent).componentInstance;
-    component.ngOnInit();
+    const fixture = TestBed.createComponent(JobsComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
   });
 
   it('should create the jobs component', () => {
@@ -112,7 +125,8 @@ describe('JobsComponent', () => {
   });
 
   it('should return correct candidate count for a job', () => {
-    const row = mockJobs.find((j) => j.id === 1)!;
-    expect(component.getCandidateCount(row)).toBe(1);
+    const job = mockJobs[0];
+    const count = component.getCandidateCount(job);
+    expect(count).toBe(1);
   });
 });

@@ -69,23 +69,19 @@
   </div>
 
   <mat-card class="table-card">
-    @if (loadError()) {
-      <div class="empty-state">
-        <mat-icon>cloud_off</mat-icon>
-        <p class="empty-title">Could not load jobs</p>
-        <p class="empty-desc">{{ loadError() }}</p>
-        <button mat-stroked-button type="button" (click)="loadFromServer()">Retry</button>
-      </div>
-    } @else if (loading()) {
+    @if (loading()) {
       <div class="loading-wrap">
         <mat-spinner diameter="40"></mat-spinner>
         <span>Loading jobs…</span>
       </div>
     } @else if (emptyMessage) {
       <div class="empty-state">
-        <mat-icon>work_off</mat-icon>
-        <p class="empty-title">No jobs to show</p>
+        <mat-icon>{{ loadError() ? 'cloud_off' : 'work_off' }}</mat-icon>
+        <p class="empty-title">{{ loadError() ? 'Could not load jobs' : 'No jobs to show' }}</p>
         <p class="empty-desc">{{ emptyMessage }}</p>
+        @if (loadError()) {
+          <button mat-stroked-button type="button" (click)="loadFromApi()">Retry</button>
+        }
       </div>
     } @else {
       <div class="table-wrap">
