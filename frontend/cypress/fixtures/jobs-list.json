@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "title": "Senior Software Engineer",
+    "description": "Build",
+    "department": "Engineering",
+    "location": "Remote",
+    "status": "Open",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z",
+    "candidateCount": 0,
+    "appliedCount": 0,
+    "interviewCount": 0,
+    "selectedCount": 0,
+    "rejectedCount": 0
+  },
+  {
+    "id": 2,
+    "title": "Data Analyst",
+    "description": "Analyze",
+    "department": "Data",
+    "location": "Remote",
+    "status": "Open",
+    "created_at": "2024-01-02T00:00:00Z",
+    "updated_at": "2024-01-02T00:00:00Z",
+    "candidateCount": 0,
+    "appliedCount": 0,
+    "interviewCount": 0,
+    "selectedCount": 0,
+    "rejectedCount": 0
+  }
+]

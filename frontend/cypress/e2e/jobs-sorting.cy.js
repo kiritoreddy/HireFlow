@@ -8,27 +8,29 @@ function seedLoggedInSession(win) {
 }
 
 describe('Jobs page sorting', () => {
+  beforeEach(() => {
+    cy.intercept('GET', 'http://localhost:8080/jobs', { fixture: 'jobs-list.json' }).as('jobsList');
+  });
+
   it('sorts by Title (ascending then descending)', () => {
     cy.visit('/jobs', {
       onBeforeLoad: (win) => seedLoggedInSession(win),
     });
+    cy.wait('@jobsList');
 
     const getFirstJobTitle = () =>
-      cy.get('table.jobs-table tr.mat-row .cell-title')
+      cy
+        .get('table.jobs-table tr.mat-row .cell-title')
         .first()
         .invoke('text')
         .then((t) => t.trim());
 
-    // Initial data order (from JobDataService) starts with Senior Software Engineer
     getFirstJobTitle().should('eq', 'Senior Software Engineer');
 
-    // Ascending
     cy.contains('table.jobs-table th[mat-sort-header]', 'Title').click();
     getFirstJobTitle().should('eq', 'Data Analyst');
 
-    // Descending
     cy.contains('table.jobs-table th[mat-sort-header]', 'Title').click();
     getFirstJobTitle().should('eq', 'Senior Software Engineer');
   });
 });
-
