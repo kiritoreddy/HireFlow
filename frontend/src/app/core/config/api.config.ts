@@ -13,3 +13,13 @@ export const USERS_ENDPOINTS = {
   create: `${API_BASE_URL}/users`,
   patch: (id: string) => `${API_BASE_URL}/users/${id}`,
 } as const;
+
+export const JOBS_ENDPOINTS = {
+  list: `${API_BASE_URL}/jobs`,
+  detail: (id: number) => `${API_BASE_URL}/jobs/${id}`,
+  applications: (jobId: number) => `${API_BASE_URL}/jobs/${jobId}/applications`,
+} as const;
+
+export const APPLICATIONS_ENDPOINTS = {
+  patch: (applicationId: string) => `${API_BASE_URL}/applications/${applicationId}`,
+} as const;

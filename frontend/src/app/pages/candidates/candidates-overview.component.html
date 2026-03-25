@@ -9,7 +9,16 @@
     <p class="subtitle">View and manage candidates across all jobs</p>
   </div>
 
-  <div class="cards">
+  @if (error()) {
+    <p class="page-error">{{ error() }}</p>
+    <button mat-stroked-button type="button" (click)="refresh()">Retry</button>
+  } @else if (loading()) {
+    <p class="page-loading">Loading…</p>
+  } @else if (jobsWithCounts.length === 0) {
+    <p class="page-empty">No jobs found.</p>
+  }
+
+  <div class="cards" *ngIf="!loading() && !error()">
     <div class="candidate-card" *ngFor="let job of jobsWithCounts">
       <div class="card-header">
         <div class="job-meta">

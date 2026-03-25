@@ -69,7 +69,14 @@
   </div>
 
   <mat-card class="table-card">
-    @if (loading()) {
+    @if (loadError()) {
+      <div class="empty-state">
+        <mat-icon>cloud_off</mat-icon>
+        <p class="empty-title">Could not load jobs</p>
+        <p class="empty-desc">{{ loadError() }}</p>
+        <button mat-stroked-button type="button" (click)="loadFromServer()">Retry</button>
+      </div>
+    } @else if (loading()) {
       <div class="loading-wrap">
         <mat-spinner diameter="40"></mat-spinner>
         <span>Loading jobs…</span>
@@ -114,7 +121,7 @@
             <td mat-cell *matCellDef="let row">
               <div class="candidate-count">
                 <mat-icon>group</mat-icon>
-                <span>{{ getCandidateCount(row.id) }}</span>
+                <span>{{ getCandidateCount(row) }}</span>
               </div>
             </td>
           </ng-container>

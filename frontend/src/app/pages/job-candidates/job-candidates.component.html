@@ -52,7 +52,14 @@
     </mat-form-field>
   </div>
 
-  <div class="table-wrap">
+  @if (loadError()) {
+    <p class="page-error">{{ loadError() }}</p>
+    <button mat-stroked-button type="button" (click)="refresh()">Retry</button>
+  } @else if (loading()) {
+    <p class="page-loading">Loading candidates…</p>
+  }
+
+  <div class="table-wrap" *ngIf="!loading() && !loadError()">
     <table mat-table [dataSource]="dataSource" class="candidates-table">
       <ng-container matColumnDef="name">
         <th mat-header-cell *matHeaderCellDef>Name</th>
