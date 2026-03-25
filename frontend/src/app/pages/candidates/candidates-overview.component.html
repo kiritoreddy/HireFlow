@@ -1,28 +1,53 @@
-<h1 class="page-title">Candidates</h1>
-<p class="subtitle">View and manage candidates across all jobs</p>
+<div class="candidates-page">
+  <div class="page-header">
+    <div class="breadcrumb">
+      <mat-icon>groups</mat-icon>
+      <span>Candidates</span>
+    </div>
 
-<div class="cards">
-  <div class="card" *ngFor="let job of jobsWithCounts">
-    <div class="card-header">
-      <div>
-        <h2>{{ job.title }}</h2>
-        <span>{{ job.department }}</span>
+    <h1 class="page-title">Candidates</h1>
+    <p class="subtitle">View and manage candidates across all jobs</p>
+  </div>
+
+  <div class="cards">
+    <div class="candidate-card" *ngFor="let job of jobsWithCounts">
+      <div class="card-header">
+        <div class="job-meta">
+          <h2>{{ job.title }}</h2>
+          <span class="department">{{ job.department || 'No department' }}</span>
+        </div>
+
+        <span class="badge" [class.closed]="job.status === 'Closed'">
+          {{ job.status }}
+        </span>
       </div>
-      <span class="badge" [class.closed]="job.status === 'Closed'">{{ job.status }}</span>
-    </div>
 
-    <div class="stats">
-      <div>Applied {{ job.applied }}</div>
-      <div>Interview {{ job.interview }}</div>
-      <div>Selected {{ job.selected }}</div>
-      <div>Rejected {{ job.rejected }}</div>
-    </div>
+      <div class="stats-grid">
+        <div class="stat-box">
+          <span class="label">Applied</span>
+          <span class="value">{{ job.applied }}</span>
+        </div>
 
-    <a
-      class="view-btn"
-      [routerLink]="['/jobs', job.id, 'candidates']"
-    >
-      View {{ job.total }} Candidates →
-    </a>
+        <div class="stat-box">
+          <span class="label">Interview</span>
+          <span class="value">{{ job.interview }}</span>
+        </div>
+
+        <div class="stat-box">
+          <span class="label">Selected</span>
+          <span class="value">{{ job.selected }}</span>
+        </div>
+
+        <div class="stat-box">
+          <span class="label">Rejected</span>
+          <span class="value">{{ job.rejected }}</span>
+        </div>
+      </div>
+
+      <a class="view-btn" [routerLink]="['/jobs', job.id, 'candidates']">
+        <span>View {{ job.total }} Candidates</span>
+        <mat-icon>arrow_forward</mat-icon>
+      </a>
+    </div>
   </div>
 </div>

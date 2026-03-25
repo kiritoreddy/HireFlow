@@ -6,12 +6,14 @@ import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { JobDataService } from '../../core/services/job-data.service';
 import { Job } from '../../core/models/job.model';
 
@@ -28,20 +30,31 @@ type StatusFilter = 'all' | 'Open' | 'Closed';
     MatButtonModule,
     MatCardModule,
     MatIconModule,
+    MatMenuModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
     MatSortModule,
     MatPaginatorModule,
     MatProgressSpinnerModule,
+    MatSnackBarModule,
   ],
   templateUrl: './jobs.component.html',
   styleUrl: './jobs.component.scss',
 })
 export class JobsComponent implements OnInit, AfterViewInit {
   private jobData = inject(JobDataService);
+  private snackBar = inject(MatSnackBar);
 
-  displayedColumns: string[] = ['title', 'description', 'department', 'location', 'status', 'actions'];
+  displayedColumns: string[] = [
+    'title',
+    'description',
+    'department',
+    'location',
+    'status',
+    'candidates',
+    'actions',
+  ];
   dataSource = new MatTableDataSource<Job>([]);
 
   @ViewChild(MatSort) sort?: MatSort;
@@ -118,5 +131,70 @@ export class JobsComponent implements OnInit, AfterViewInit {
     this.searchQuery = '';
     this.statusFilter = 'all';
     this.refresh();
+  }
+
+  getCandidateCount(jobId: number): number {
+    const counts = this.jobData.getCandidateCountsByJob().get(jobId);
+    if (!counts) return 0;
+    return counts.applied + counts.interview + counts.selected + counts.rejected;
+  }
+
+  onCreateJobClick(): void {
+    const title = prompt('Enter job title');
+    if (!title?.trim()) return;
+
+    const department = prompt('Enter department', 'Engineering')?.trim() || 'General';
+    const location = prompt('Enter location', 'Remote')?.trim() || 'Remote';
+    const description =
+      prompt('Enter job description', 'New job posting')?.trim() || 'New job posting';
+
+    this.jobData.addJob({
+      title: title.trim(),
+      department,
+      location,
+      description,
+      status: 'Open',
+    });
+
+    this.refresh();
+    this.snackBar.open('Job created successfully.', 'Close', {
+      duration: 2500,
+      horizontalPosition: 'right',
+      verticalPosition: 'top',
+    });
+  }
+
+  editJob(job: Job): void {
+    const title = prompt('Edit job title', job.title);
+    if (!title?.trim()) return;
+
+    const department = prompt('Edit department', job.department)?.trim() || job.department;
+    const location = prompt('Edit location', job.location)?.trim() || job.location;
+    const description = prompt('Edit description', job.description)?.trim() || job.description;
+
+    this.jobData.updateJob(job.id, {
+      title: title.trim(),
+      department,
+      location,
+      description,
+    });
+
+    this.refresh();
+    this.snackBar.open('Job updated successfully.', 'Close', {
+      duration: 2500,
+      horizontalPosition: 'right',
+      verticalPosition: 'top',
+    });
+  }
+
+  toggleJobStatus(job: Job): void {
+    const newStatus: Job['status'] = job.status === 'Open' ? 'Closed' : 'Open';
+    this.jobData.setJobStatus(job.id, newStatus);
+    this.refresh();
+    this.snackBar.open(`Job marked as ${newStatus}.`, 'Close', {
+      duration: 2500,
+      horizontalPosition: 'right',
+      verticalPosition: 'top',
+    });
   }
 }

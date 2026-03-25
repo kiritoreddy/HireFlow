@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { MatIconModule } from '@angular/material/icon';
 import { JobDataService } from '../../core/services/job-data.service';
 import { Job } from '../../core/models/job.model';
 
@@ -15,7 +16,7 @@ interface JobWithCounts extends Job {
 @Component({
   selector: 'app-candidates-overview',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, MatIconModule],
   templateUrl: './candidates-overview.component.html',
   styleUrls: ['./candidates-overview.component.scss'],
 })
@@ -38,8 +39,10 @@ export class CandidatesOverviewComponent implements OnInit {
         selected: 0,
         rejected: 0,
       };
+
       const total =
         counts.applied + counts.interview + counts.selected + counts.rejected;
+
       return {
         ...job,
         ...counts,

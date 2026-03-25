@@ -191,6 +191,22 @@
   font-size: 0.875rem;
 }
 
+.candidate-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: rgba(0, 0, 0, 0.75);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.candidate-count mat-icon {
+  font-size: 1.125rem;
+  width: 1.125rem;
+  height: 1.125rem;
+  color: rgba(0, 0, 0, 0.45);
+}
+
 .status-badge {
   display: inline-block;
   padding: 0.25rem 0.75rem;

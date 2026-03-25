@@ -3,11 +3,13 @@ package main
 import (
 	"backend/config"
 	"backend/models"
-	"backend/routes" 
-	"log" 
-	"net/http"   
-) 
+	"backend/routes"
+	"backend/seeder"
+	"log"
+	"net/http"
+)
 
+// Main entry point for the HireFlow backend application
 func main() {
 	// Initialize database connection
 	db := config.InitDB()
@@ -22,6 +24,9 @@ func main() {
 	); err != nil {
 		log.Fatal("failed to migrate database:", err)
 	}
+
+	// Seed default admin user if none exists
+	seeder.SeedAdmin(db)
 
 	// Setup routes with CORS middleware
 	handler := routes.SetupRoutes(db)
