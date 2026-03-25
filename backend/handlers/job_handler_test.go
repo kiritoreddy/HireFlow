@@ -16,7 +16,7 @@ import (
 // TestGetAllJobs_Success verifies jobs are returned with candidateCount
 func TestGetAllJobs_Success(t *testing.T) {
 	db := setupTestDB(t)
-	if err := db.AutoMigrate(&models.Job{}, &models.Application{}); err != nil {
+	if err := db.AutoMigrate(&models.Job{}, &models.Candidate{}, &models.Application{}); err != nil {
 		t.Fatalf("Failed to migrate: %v", err)
 	}
 	handler := &JobHandler{DB: db}
@@ -53,12 +53,15 @@ func TestGetAllJobs_Success(t *testing.T) {
 	if jobs[0].CandidateCount != 0 {
 		t.Errorf("Expected candidateCount 0, got %d", jobs[0].CandidateCount)
 	}
+	if jobs[0].AppliedCount != 0 {
+		t.Errorf("Expected appliedCount 0, got %d", jobs[0].AppliedCount)
+	}
 }
 
 // TestGetAllJobs_EmptyList verifies empty array returned when no jobs exist
 func TestGetAllJobs_EmptyList(t *testing.T) {
 	db := setupTestDB(t)
-	if err := db.AutoMigrate(&models.Job{}, &models.Application{}); err != nil {
+	if err := db.AutoMigrate(&models.Job{}, &models.Candidate{}, &models.Application{}); err != nil {
 		t.Fatalf("Failed to migrate: %v", err)
 	}
 	handler := &JobHandler{DB: db}
@@ -82,7 +85,7 @@ func TestGetAllJobs_EmptyList(t *testing.T) {
 // TestGetAllJobs_WithCandidateCount verifies candidateCount is accurate
 func TestGetAllJobs_WithCandidateCount(t *testing.T) {
 	db := setupTestDB(t)
-	if err := db.AutoMigrate(&models.Job{}, &models.Application{}); err != nil {
+	if err := db.AutoMigrate(&models.Job{}, &models.Candidate{}, &models.Application{}); err != nil {
 		t.Fatalf("Failed to migrate: %v", err)
 	}
 	handler := &JobHandler{DB: db}
@@ -94,9 +97,11 @@ func TestGetAllJobs_WithCandidateCount(t *testing.T) {
 	}
 	db.Create(&job)
 
-	// Create 3 applications for this job
+	cand := models.Candidate{Name: "Test", Email: "testapp@example.com"}
+	db.Create(&cand)
+
 	for i := 0; i < 3; i++ {
-		app := models.Application{JobID: job.ID, Status: "APPLIED"}
+		app := models.Application{JobID: job.ID, CandidateID: cand.ID, Status: "APPLIED"}
 		db.Create(&app)
 	}
 
@@ -110,6 +115,9 @@ func TestGetAllJobs_WithCandidateCount(t *testing.T) {
 
 	if jobs[0].CandidateCount != 3 {
 		t.Errorf("Expected candidateCount 3, got %d", jobs[0].CandidateCount)
+	}
+	if jobs[0].AppliedCount != 3 {
+		t.Errorf("Expected appliedCount 3, got %d", jobs[0].AppliedCount)
 	}
 }
 

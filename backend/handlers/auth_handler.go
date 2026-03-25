@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -191,6 +192,9 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 // Login handles POST /auth/login - User authentication
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
+	defer func() { log.Printf("[LOGIN] completed in %v", time.Since(start)) }()
+
 	var req LoginRequest
 
 	// Decode JSON request body
@@ -212,7 +216,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	// Find user by email
 	var user models.User
 	if err := h.DB.Where("email = ?", req.Email).First(&user).Error; err != nil {
-		// Return generic error to prevent email enumeration
+		log.Printf("[LOGIN] user not found - elapsed: %v", time.Since(start))
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid credentials"})
@@ -221,6 +225,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	// Check if user is active
 	if !user.IsActive {
+		log.Printf("[LOGIN] deactivated account (returning before password check) - elapsed: %v", time.Since(start))
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Account deactivated"})
@@ -229,7 +234,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	// Verify password
 	if err := user.CheckPassword(req.Password); err != nil {
-		// Return generic error to prevent email enumeration
+		log.Printf("[LOGIN] wrong password (bcrypt) - elapsed: %v", time.Since(start))
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid credentials"})

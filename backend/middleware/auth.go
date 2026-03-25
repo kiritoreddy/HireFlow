@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
 
@@ -19,6 +20,7 @@ func RequireAuth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		auth := r.Header.Get("Authorization")
 		if auth == "" {
+			log.Printf("[AUTH DEBUG] %s %s -> 401: Authorization header missing", r.Method, r.URL.Path)
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{"error": "Authorization header required"})
@@ -26,6 +28,7 @@ func RequireAuth(next http.HandlerFunc) http.HandlerFunc {
 		}
 		parts := strings.SplitN(auth, " ", 2)
 		if len(parts) != 2 || parts[0] != "Bearer" {
+			log.Printf("[AUTH DEBUG] %s %s -> 401: Invalid Authorization format (expected Bearer)", r.Method, r.URL.Path)
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{"error": "Invalid Authorization header"})
@@ -33,6 +36,7 @@ func RequireAuth(next http.HandlerFunc) http.HandlerFunc {
 		}
 		claims, err := utils.ValidateJWT(parts[1])
 		if err != nil {
+			log.Printf("[AUTH DEBUG] %s %s -> 401: JWT validation failed: %v", r.Method, r.URL.Path, err)
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{"error": "Invalid or expired token"})

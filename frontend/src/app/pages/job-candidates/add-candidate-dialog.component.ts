@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { AfterViewInit, Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
@@ -20,7 +20,7 @@ import { MatInputModule } from '@angular/material/input';
   templateUrl: './add-candidate-dialog.component.html',
   styleUrl: './add-candidate-dialog.component.scss',
 })
-export class AddCandidateDialogComponent implements OnInit {
+export class AddCandidateDialogComponent implements OnInit, AfterViewInit {
   name = '';
   email = '';
   resume = '';
@@ -66,7 +66,6 @@ export class AddCandidateDialogComponent implements OnInit {
       resume: this.resume || '—',
       stage: 'Applied',
     };
-
     this.dialogRef.close(payload);
   }
 

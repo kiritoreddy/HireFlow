@@ -27,7 +27,11 @@ type JobResponse struct {
 	Status         string `json:"status"`
 	CreatedAt      string `json:"created_at"`
 	UpdatedAt      string `json:"updated_at"`
-	CandidateCount int64  `json:"candidateCount"` // Number of applications for this job
+	CandidateCount int64  `json:"candidateCount"`
+	AppliedCount   int64  `json:"appliedCount"`
+	InterviewCount int64  `json:"interviewCount"`
+	SelectedCount  int64  `json:"selectedCount"`
+	RejectedCount  int64  `json:"rejectedCount"`
 }
 
 // CreateJob handles POST /jobs - Create new job posting
@@ -69,16 +73,11 @@ func (h *JobHandler) GetAllJobs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Build response with candidateCount using single COUNT query per job
-	// Uses LEFT JOIN approach: counts applications per job from applications table
+	stageAgg := h.applicationStageCountsByJob()
+
 	response := make([]JobResponse, 0, len(jobs))
 	for _, job := range jobs {
-		var count int64
-		// Count applications for this specific job from applications table
-		h.DB.Model(&models.Application{}).
-			Where("job_id = ?", job.ID).
-			Count(&count)
-
+		agg := stageAgg[job.ID]
 		response = append(response, JobResponse{
 			ID:             job.ID,
 			Title:          job.Title,
@@ -88,7 +87,11 @@ func (h *JobHandler) GetAllJobs(w http.ResponseWriter, r *http.Request) {
 			Status:         job.Status,
 			CreatedAt:      job.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 			UpdatedAt:      job.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
-			CandidateCount: count,
+			CandidateCount: agg.total,
+			AppliedCount:   agg.applied,
+			InterviewCount: agg.interview,
+			SelectedCount:  agg.selected,
+			RejectedCount:  agg.rejected,
 		})
 	}
 
@@ -227,4 +230,39 @@ func (h *JobHandler) DeleteJob(w http.ResponseWriter, r *http.Request) {
 
 	// Return 204 No Content status (successful deletion)
 	w.WriteHeader(http.StatusNoContent)
+}
+
+type jobStageAgg struct {
+	total, applied, interview, selected, rejected int64
+}
+
+func (h *JobHandler) applicationStageCountsByJob() map[uint]jobStageAgg {
+	rows := []struct {
+		JobID  uint
+		Status string
+		Cnt    int64
+	}{}
+	_ = h.DB.Raw(`
+		SELECT job_id, UPPER(TRIM(status)) AS status, COUNT(*) AS cnt
+		FROM applications
+		WHERE deleted_at IS NULL
+		GROUP BY job_id, UPPER(TRIM(status))
+	`).Scan(&rows)
+	out := make(map[uint]jobStageAgg)
+	for _, r := range rows {
+		a := out[r.JobID]
+		a.total += r.Cnt
+		switch r.Status {
+		case "APPLIED":
+			a.applied += r.Cnt
+		case "INTERVIEW":
+			a.interview += r.Cnt
+		case "SELECTED":
+			a.selected += r.Cnt
+		case "REJECTED", "WITHDRAWN":
+			a.rejected += r.Cnt
+		}
+		out[r.JobID] = a
+	}
+	return out
 }

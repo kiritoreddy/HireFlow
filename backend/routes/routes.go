@@ -45,7 +45,9 @@ func SetupRoutes(db *gorm.DB) http.Handler {
 	// Candidate API endpoints (BE-2)
 	// ---------------------------
 	candidateHandler := &handlers.CandidateHandler{DB: db}
-	router.HandleFunc("/api/candidate/apply", candidateHandler.ApplyToJob).Methods("POST")
+	router.HandleFunc("/api/candidate/apply", middleware.RequireAuth(candidateHandler.ApplyWithCandidate)).Methods("POST")
+	router.HandleFunc("/api/candidate/jobs/{jobId}/applications", middleware.RequireAuth(candidateHandler.ListApplicationsByJob)).Methods("GET")
+	router.HandleFunc("/api/candidate/applications/{id}/stage", middleware.RequireAuth(candidateHandler.UpdateApplicationStage)).Methods("PATCH")
 	router.HandleFunc("/api/candidate/applications", candidateHandler.GetApplications).Methods("GET")
 	router.HandleFunc("/api/candidate/applications/{id}/withdraw", candidateHandler.WithdrawApplication).Methods("PATCH")
 

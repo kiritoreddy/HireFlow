@@ -88,7 +88,10 @@
 
 .toolbar {
   display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
   justify-content: flex-end;
+  align-items: flex-start;
   margin-bottom: 18px;
 }
 
@@ -96,8 +99,13 @@
   width: 300px;
 }
 
+.stage-filter-field {
+  min-width: 200px;
+}
+
 ::ng-deep .search-field .mat-mdc-text-field-wrapper,
-::ng-deep .stage-field .mat-mdc-text-field-wrapper {
+::ng-deep .stage-field .mat-mdc-text-field-wrapper,
+::ng-deep .stage-filter-field .mat-mdc-text-field-wrapper {
   border-radius: 12px !important;
   background: #fff;
 }
@@ -107,7 +115,10 @@
 ::ng-deep .search-field .mdc-notched-outline__trailing,
 ::ng-deep .stage-field .mdc-notched-outline__leading,
 ::ng-deep .stage-field .mdc-notched-outline__notch,
-::ng-deep .stage-field .mdc-notched-outline__trailing {
+::ng-deep .stage-field .mdc-notched-outline__trailing,
+::ng-deep .stage-filter-field .mdc-notched-outline__leading,
+::ng-deep .stage-filter-field .mdc-notched-outline__notch,
+::ng-deep .stage-filter-field .mdc-notched-outline__trailing {
   border-color: #e5e7eb !important;
 }
 
@@ -178,4 +189,12 @@
   text-align: center;
   color: #6b7280;
   padding: 28px;
+}
+
+.loading-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 2rem 0;
+  color: #667085;
 }

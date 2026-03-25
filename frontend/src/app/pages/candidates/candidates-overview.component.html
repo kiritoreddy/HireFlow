@@ -9,6 +9,14 @@
     <p class="subtitle">View and manage candidates across all jobs</p>
   </div>
 
+  @if (loading()) {
+    <div class="loading-row">
+      <mat-spinner diameter="40"></mat-spinner>
+      <span>Loading jobs…</span>
+    </div>
+  } @else if (loadError()) {
+    <p class="error-msg">Could not load jobs. Ensure the backend is running and you are signed in.</p>
+  } @else {
   <div class="cards">
     <div class="candidate-card" *ngFor="let job of jobsWithCounts">
       <div class="card-header">
@@ -50,4 +58,5 @@
       </a>
     </div>
   </div>
+  }
 </div>
