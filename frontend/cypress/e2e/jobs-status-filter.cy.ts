@@ -1,16 +1,11 @@
-function seedLoggedInSession(win) {
-  win.sessionStorage.setItem('hireflow_logged_in', 'true');
-  win.sessionStorage.setItem('hireflow_access_token', 'dummy-token');
-  win.sessionStorage.setItem(
-    'hireflow_user',
-    JSON.stringify({ name: 'Admin', email: 'admin@hireflow.com', role: 'admin' })
-  );
-}
+/// <reference types="cypress" />
+import { seedHireFlowLoggedIn } from '../support/session';
 
 describe('Jobs page status filter', () => {
   it('filters rows when selecting Closed', () => {
+    cy.intercept('GET', 'http://localhost:8080/jobs', { fixture: 'jobs.json' });
     cy.visit('/jobs', {
-      onBeforeLoad: (win) => seedLoggedInSession(win),
+      onBeforeLoad: (win) => seedHireFlowLoggedIn(win),
     });
 
     cy.get('[data-cy="jobs-status-select"]').click();
@@ -22,4 +17,3 @@ describe('Jobs page status filter', () => {
     cy.contains('.cell-title', 'Product Designer').should('not.exist');
   });
 });
-

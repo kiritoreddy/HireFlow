@@ -1,16 +1,11 @@
-function seedLoggedInSession(win) {
-  win.sessionStorage.setItem('hireflow_logged_in', 'true');
-  win.sessionStorage.setItem('hireflow_access_token', 'dummy-token');
-  win.sessionStorage.setItem(
-    'hireflow_user',
-    JSON.stringify({ name: 'Admin', email: 'admin@hireflow.com', role: 'admin' })
-  );
-}
+/// <reference types="cypress" />
+import { seedHireFlowLoggedIn } from '../support/session';
 
 describe('Jobs page clear filters', () => {
   it('clears search and shows all jobs', () => {
+    cy.intercept('GET', 'http://localhost:8080/jobs', { fixture: 'jobs.json' });
     cy.visit('/jobs', {
-      onBeforeLoad: (win) => seedLoggedInSession(win),
+      onBeforeLoad: (win) => seedHireFlowLoggedIn(win),
     });
 
     cy.get('[data-cy="jobs-search-input"]').clear().type('Designer');
@@ -22,4 +17,3 @@ describe('Jobs page clear filters', () => {
     cy.get('[data-cy="jobs-search-input"]').should('have.value', '');
   });
 });
-

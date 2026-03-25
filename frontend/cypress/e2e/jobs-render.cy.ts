@@ -1,16 +1,11 @@
-function seedLoggedInSession(win) {
-  win.sessionStorage.setItem('hireflow_logged_in', 'true');
-  win.sessionStorage.setItem('hireflow_access_token', 'dummy-token');
-  win.sessionStorage.setItem(
-    'hireflow_user',
-    JSON.stringify({ name: 'Admin', email: 'admin@hireflow.com', role: 'admin' })
-  );
-}
+/// <reference types="cypress" />
+import { seedHireFlowLoggedIn } from '../support/session';
 
 describe('Jobs page (logged-in)', () => {
-  it('renders jobs table with seeded sessionStorage', () => {
+  it('renders jobs table with stubbed jobs API', () => {
+    cy.intercept('GET', 'http://localhost:8080/jobs', { fixture: 'jobs.json' });
     cy.visit('/jobs', {
-      onBeforeLoad: (win) => seedLoggedInSession(win),
+      onBeforeLoad: (win) => seedHireFlowLoggedIn(win),
     });
 
     cy.get('[data-cy="jobs-title"]').should('contain.text', 'Jobs');
@@ -32,4 +27,3 @@ describe('Jobs page (logged-in)', () => {
     });
   });
 });
-
