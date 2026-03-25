@@ -1,11 +1,43 @@
 import { TestBed } from '@angular/core/testing';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { of } from 'rxjs';
+import { vi } from 'vitest';
 import { JobsComponent } from './jobs.component';
-import { JobDataService } from '../../core/services/job-data.service';
+import { JobsApiService } from '../../core/services/jobs-api.service';
+import { Job } from '../../core/models/job.model';
+
+const mockJobs: Job[] = [
+  {
+    id: 1,
+    title: 'Product Designer',
+    description: 'Design',
+    department: 'Design',
+    location: 'Remote',
+    status: 'Open',
+    candidateCount: 1,
+  },
+  {
+    id: 2,
+    title: 'Senior Software Engineer',
+    description: 'Build',
+    department: 'Engineering',
+    location: 'Remote',
+    status: 'Open',
+    candidateCount: 0,
+  },
+  {
+    id: 3,
+    title: 'Legacy Role',
+    description: 'Old',
+    department: 'Engineering',
+    location: 'On-site',
+    status: 'Closed',
+    candidateCount: 0,
+  },
+];
 
 describe('JobsComponent', () => {
   let component: JobsComponent;
-  let jobDataService: JobDataService;
 
   beforeEach(async () => {
     TestBed.overrideComponent(JobsComponent, {
@@ -17,7 +49,14 @@ describe('JobsComponent', () => {
     await TestBed.configureTestingModule({
       imports: [JobsComponent],
       providers: [
-        JobDataService,
+        {
+          provide: JobsApiService,
+          useValue: {
+            list: () => of(mockJobs),
+            create: vi.fn(() => of(mockJobs[0])),
+            update: vi.fn(() => of(mockJobs[0])),
+          },
+        },
         {
           provide: MatSnackBar,
           useValue: { open: () => ({}) },
@@ -26,8 +65,6 @@ describe('JobsComponent', () => {
     }).compileComponents();
 
     component = TestBed.createComponent(JobsComponent).componentInstance;
-    jobDataService = TestBed.inject(JobDataService);
-
     component.ngOnInit();
   });
 
@@ -36,8 +73,7 @@ describe('JobsComponent', () => {
   });
 
   it('should load all jobs on init', () => {
-    const jobs = jobDataService.getJobs();
-    expect(component.dataSource.data.length).toBe(jobs.length);
+    expect(component.dataSource.data.length).toBe(mockJobs.length);
   });
 
   it('should filter jobs by search term', () => {
@@ -76,7 +112,7 @@ describe('JobsComponent', () => {
   });
 
   it('should return correct candidate count for a job', () => {
-    const count = component.getCandidateCount(1);
-    expect(count).toBe(1);
+    const row = mockJobs.find((j) => j.id === 1)!;
+    expect(component.getCandidateCount(row)).toBe(1);
   });
 });
