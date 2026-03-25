@@ -1,4 +1,4 @@
-/** Job model – aligned with backend GET /jobs response. */
+/** Job model – aligned with backend. Swap static data for API later. */
 export interface Job {
   id: number;
   title: string;
@@ -8,9 +8,4 @@ export interface Job {
   status: 'Open' | 'Closed';
   createdAt?: string;
   updatedAt?: string;
-  candidateCount?: number;
-  appliedCount?: number;
-  interviewCount?: number;
-  selectedCount?: number;
-  rejectedCount?: number;
 }

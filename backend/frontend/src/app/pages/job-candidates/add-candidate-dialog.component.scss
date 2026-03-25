@@ -1,0 +1,58 @@
+:host {
+  display: block;
+  font-family: 'Inter', sans-serif;
+}
+
+.dialog-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 420px;
+  padding-top: 8px !important;
+  overflow: hidden;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.resume-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.resume-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #344054;
+}
+
+.file-input {
+  font-size: 14px;
+}
+
+.file-text {
+  margin: 0;
+  font-size: 13px;
+  color: #667085;
+}
+
+.dialog-actions {
+  padding-top: 12px;
+  gap: 10px;
+}
+
+.dialog-actions button {
+  min-width: 120px;
+  height: 42px;
+  border-radius: 10px;
+  font-weight: 600;
+}
