@@ -19,15 +19,19 @@ type JobHandler struct {
 // JobResponse extends Job model with candidateCount for the jobs list
 // candidateCount is computed via LEFT JOIN with applications table
 type JobResponse struct {
-	ID             uint   `json:"id"`
-	Title          string `json:"title"`
-	Description    string `json:"description"`
-	Department     string `json:"department"`
-	Location       string `json:"location"`
-	Status         string `json:"status"`
-	CreatedAt      string `json:"created_at"`
-	UpdatedAt      string `json:"updated_at"`
-	CandidateCount int64  `json:"candidateCount"` // Number of applications for this job
+	ID              uint   `json:"id"`
+	Title           string `json:"title"`
+	Description     string `json:"description"`
+	Department      string `json:"department"`
+	Location        string `json:"location"`
+	Status          string `json:"status"`
+	CreatedAt       string `json:"created_at"`
+	UpdatedAt       string `json:"updated_at"`
+	CandidateCount  int64  `json:"candidateCount"` // Total applications (non-withdrawn)
+	AppliedCount    int64  `json:"appliedCount"`
+	InterviewCount  int64  `json:"interviewCount"`
+	SelectedCount   int64  `json:"selectedCount"`
+	RejectedCount   int64  `json:"rejectedCount"`
 }
 
 // CreateJob handles POST /jobs - Create new job posting
@@ -69,26 +73,50 @@ func (h *JobHandler) GetAllJobs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Build response with candidateCount using single COUNT query per job
-	// Uses LEFT JOIN approach: counts applications per job from applications table
+	type aggRow struct {
+		JobID  uint   `gorm:"column:job_id"`
+		Status string `gorm:"column:status"`
+		Cnt    int64  `gorm:"column:cnt"`
+	}
+	var aggs []aggRow
+	_ = h.DB.Raw(`
+		SELECT job_id, status, COUNT(*) AS cnt
+		FROM applications
+		WHERE status != ?
+		GROUP BY job_id, status
+	`, "WITHDRAWN").Scan(&aggs).Error
+
+	countsByJob := make(map[uint]map[string]int64)
+	for _, row := range aggs {
+		if countsByJob[row.JobID] == nil {
+			countsByJob[row.JobID] = make(map[string]int64)
+		}
+		countsByJob[row.JobID][row.Status] = row.Cnt
+	}
+
 	response := make([]JobResponse, 0, len(jobs))
 	for _, job := range jobs {
-		var count int64
-		// Count applications for this specific job from applications table
-		h.DB.Model(&models.Application{}).
-			Where("job_id = ?", job.ID).
-			Count(&count)
+		m := countsByJob[job.ID]
+		applied := m["APPLIED"]
+		interview := m["INTERVIEW"]
+		selected := m["SELECTED"]
+		rejected := m["REJECTED"]
+		total := applied + interview + selected + rejected
 
 		response = append(response, JobResponse{
-			ID:             job.ID,
-			Title:          job.Title,
-			Description:    job.Description,
-			Department:     job.Department,
-			Location:       job.Location,
-			Status:         job.Status,
-			CreatedAt:      job.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-			UpdatedAt:      job.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
-			CandidateCount: count,
+			ID:              job.ID,
+			Title:           job.Title,
+			Description:     job.Description,
+			Department:      job.Department,
+			Location:        job.Location,
+			Status:          job.Status,
+			CreatedAt:       job.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+			UpdatedAt:       job.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+			CandidateCount:  total,
+			AppliedCount:    applied,
+			InterviewCount:  interview,
+			SelectedCount:   selected,
+			RejectedCount:   rejected,
 		})
 	}
 

@@ -31,9 +31,19 @@ func SetupRoutes(db *gorm.DB) http.Handler {
 
 	// Job endpoints
 	jobHandler := &handlers.JobHandler{DB: db}
+	candidateHandler := &handlers.CandidateHandler{DB: db}
 
 	// Public job viewing (auth required, any role)
 	router.HandleFunc("/jobs", middleware.RequireAuth(jobHandler.GetAllJobs)).Methods("GET")
+	// Job applications (must register before /jobs/{id} if router is prefix-sensitive)
+	router.HandleFunc(
+		"/jobs/{id}/applications",
+		middleware.RequireAuth(middleware.RequireRole("admin", "hiring_manager", "interviewer")(candidateHandler.ListApplicationsForJob)),
+	).Methods("GET")
+	router.HandleFunc(
+		"/jobs/{id}/applications",
+		middleware.RequireAuth(middleware.RequireRole("admin", "hiring_manager")(candidateHandler.CreateApplicationForJob)),
+	).Methods("POST")
 	router.HandleFunc("/jobs/{id}", middleware.RequireAuth(jobHandler.GetJobByID)).Methods("GET")
 
 	// Protected job management (hiring_manager or admin only)
@@ -44,7 +54,10 @@ func SetupRoutes(db *gorm.DB) http.Handler {
 	// ---------------------------
 	// Candidate API endpoints (BE-2)
 	// ---------------------------
-	candidateHandler := &handlers.CandidateHandler{DB: db}
+	router.HandleFunc(
+		"/applications/{id}",
+		middleware.RequireAuth(middleware.RequireRole("admin", "hiring_manager", "interviewer")(candidateHandler.UpdateApplicationStatus)),
+	).Methods("PATCH")
 	router.HandleFunc("/api/candidate/apply", candidateHandler.ApplyToJob).Methods("POST")
 	router.HandleFunc("/api/candidate/applications", candidateHandler.GetApplications).Methods("GET")
 	router.HandleFunc("/api/candidate/applications/{id}/withdraw", candidateHandler.WithdrawApplication).Methods("PATCH")
