@@ -10,9 +10,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AddCandidateDialogComponent } from './add-candidate-dialog.component';
 import { JobsApiService } from '../../core/services/jobs-api.service';
-import { JobApplicationsApiService } from '../../core/services/job-applications-api.service';
+import { CandidatesApiService } from '../../core/services/candidates-api.service';
 import { JobCandidate, CandidateStage } from '../../core/models/candidate.model';
 
 const STAGES: CandidateStage[] = ['Applied', 'Interview', 'Selected', 'Rejected'];
@@ -33,6 +34,7 @@ type CandidateFilter = 'All' | CandidateStage;
     MatFormFieldModule,
     MatInputModule,
     MatSnackBarModule,
+    MatProgressSpinnerModule,
   ],
   templateUrl: './job-candidates.component.html',
   styleUrl: './job-candidates.component.scss',
@@ -41,7 +43,7 @@ export class JobCandidatesComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private dialog = inject(MatDialog);
   private jobsApi = inject(JobsApiService);
-  private applicationsApi = inject(JobApplicationsApiService);
+  private candidatesApi = inject(CandidatesApiService);
   private snackBar = inject(MatSnackBar);
 
   jobId: number | null = null;
@@ -54,10 +56,8 @@ export class JobCandidatesComponent implements OnInit {
   dataSource = new MatTableDataSource<JobCandidate>([]);
   allCandidates: JobCandidate[] = [];
 
-  loading = signal(false);
-  loadError = signal('');
-
   readonly stages = STAGES;
+  loading = signal(true);
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -65,12 +65,14 @@ export class JobCandidatesComponent implements OnInit {
       this.jobId = +id;
       this.loadJobMeta();
       this.refresh();
+    } else {
+      this.loading.set(false);
     }
   }
 
-  loadJobMeta(): void {
+  private loadJobMeta(): void {
     if (this.jobId == null) return;
-    this.jobsApi.getById(this.jobId).subscribe({
+    this.jobsApi.getJobById(this.jobId).subscribe({
       next: (job) => {
         this.jobTitle = job.title;
         this.jobDepartment = job.department ?? '';
@@ -85,18 +87,17 @@ export class JobCandidatesComponent implements OnInit {
   refresh(): void {
     if (this.jobId == null) return;
     this.loading.set(true);
-    this.loadError.set('');
-    this.applicationsApi.listForJob(this.jobId).subscribe({
+    this.candidatesApi.listByJob(this.jobId).subscribe({
       next: (list) => {
         this.allCandidates = list;
+        this.loading.set(false);
         this.applyFilters();
-        this.loading.set(false);
       },
-      error: (err) => {
-        this.loading.set(false);
-        this.loadError.set(err?.error?.error ?? err?.message ?? 'Could not load candidates.');
+      error: () => {
         this.allCandidates = [];
-        this.dataSource.data = [];
+        this.loading.set(false);
+        this.applyFilters();
+        this.snackBar.open('Failed to load candidates.', 'Close', { duration: 4000 });
       },
     });
   }
@@ -135,36 +136,28 @@ export class JobCandidatesComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((result) => {
       if (result && this.jobId != null) {
-        this.applicationsApi
-          .createForJob(this.jobId, {
+        this.candidatesApi
+          .apply({
+            job_id: this.jobId,
             name: result.name,
             email: result.email,
-            resume: result.resume || '—',
+            resume_path: result.resume || '',
           })
           .subscribe({
             next: () => {
               this.snackBar.open('Candidate added.', 'Close', { duration: 2500 });
               this.refresh();
             },
-            error: (err) => {
-              const msg = err?.error?.error ?? 'Failed to add candidate';
-              this.snackBar.open(msg, 'Close', { duration: 5000 });
-            },
+            error: () => this.snackBar.open('Failed to add candidate.', 'Close', { duration: 4000 }),
           });
       }
     });
   }
 
   onStageChange(candidate: JobCandidate, newStage: CandidateStage): void {
-    this.applicationsApi.updateStage(candidate.id, newStage).subscribe({
-      next: () => {
-        this.refresh();
-      },
-      error: (err) => {
-        const msg = err?.error?.error ?? 'Failed to update stage';
-        this.snackBar.open(msg, 'Close', { duration: 5000 });
-        this.refresh();
-      },
+    this.candidatesApi.updateStage(candidate.id, newStage).subscribe({
+      next: () => this.refresh(),
+      error: () => this.snackBar.open('Failed to update stage.', 'Close', { duration: 4000 }),
     });
   }
 }

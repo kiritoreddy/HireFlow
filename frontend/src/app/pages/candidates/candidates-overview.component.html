@@ -9,16 +9,15 @@
     <p class="subtitle">View and manage candidates across all jobs</p>
   </div>
 
-  @if (error()) {
-    <p class="page-error">{{ error() }}</p>
-    <button mat-stroked-button type="button" (click)="refresh()">Retry</button>
-  } @else if (loading()) {
-    <p class="page-loading">Loading…</p>
-  } @else if (jobsWithCounts.length === 0) {
-    <p class="page-empty">No jobs found.</p>
-  }
-
-  <div class="cards" *ngIf="!loading() && !error()">
+  @if (loading()) {
+    <div class="loading-row">
+      <mat-spinner diameter="40"></mat-spinner>
+      <span>Loading jobs…</span>
+    </div>
+  } @else if (loadError()) {
+    <p class="error-msg">Could not load jobs. Ensure the backend is running and you are signed in.</p>
+  } @else {
+  <div class="cards">
     <div class="candidate-card" *ngFor="let job of jobsWithCounts">
       <div class="card-header">
         <div class="job-meta">
@@ -59,4 +58,5 @@
       </a>
     </div>
   </div>
+  }
 </div>

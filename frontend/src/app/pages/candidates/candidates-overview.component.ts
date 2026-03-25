@@ -2,7 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { JobsApiService } from '../../core/services/jobs-api.service';
 import { Job } from '../../core/models/job.model';
 
@@ -17,7 +17,7 @@ interface JobWithCounts extends Job {
 @Component({
   selector: 'app-candidates-overview',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatIconModule, MatButtonModule],
+  imports: [CommonModule, RouterModule, MatIconModule, MatProgressSpinnerModule],
   templateUrl: './candidates-overview.component.html',
   styleUrls: ['./candidates-overview.component.scss'],
 })
@@ -25,8 +25,8 @@ export class CandidatesOverviewComponent implements OnInit {
   private jobsApi = inject(JobsApiService);
 
   jobsWithCounts: JobWithCounts[] = [];
-  loading = signal(false);
-  error = signal('');
+  loading = signal(true);
+  loadError = signal(false);
 
   ngOnInit(): void {
     this.refresh();
@@ -34,15 +34,16 @@ export class CandidatesOverviewComponent implements OnInit {
 
   refresh(): void {
     this.loading.set(true);
-    this.error.set('');
-    this.jobsApi.list().subscribe({
+    this.loadError.set(false);
+    this.jobsApi.getJobs().subscribe({
       next: (jobs) => {
         this.jobsWithCounts = jobs.map((job) => {
           const applied = job.appliedCount ?? 0;
           const interview = job.interviewCount ?? 0;
           const selected = job.selectedCount ?? 0;
           const rejected = job.rejectedCount ?? 0;
-          const total = applied + interview + selected + rejected;
+          const total =
+            job.candidateCount ?? applied + interview + selected + rejected;
           return {
             ...job,
             applied,
@@ -54,12 +55,10 @@ export class CandidatesOverviewComponent implements OnInit {
         });
         this.loading.set(false);
       },
-      error: (err) => {
-        this.loading.set(false);
-        this.error.set(
-          err?.error?.error ?? err?.message ?? 'Could not load jobs.'
-        );
+      error: () => {
         this.jobsWithCounts = [];
+        this.loading.set(false);
+        this.loadError.set(true);
       },
     });
   }
