@@ -1,125 +1,17 @@
-:host {
-  display: block;
-  font-family: 'Inter', sans-serif;
-  color: #111827;
-}
-
 .job-candidates-page {
   padding: 0;
-  max-width: 1220px;
 }
 
-.page-header {
+.header-row {
   display: flex;
-  align-items: flex-start;
   justify-content: space-between;
-  gap: 20px;
-  margin-bottom: 20px;
-}
-
-.header-top {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-}
-
-.back-btn {
-  margin-top: 2px;
-  border-radius: 10px;
-}
-
-.heading-block {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.breadcrumb {
-  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  color: #6b7280;
-  font-size: 13px;
-  font-weight: 500;
+  margin-bottom: 1.5rem;
 }
 
-.breadcrumb mat-icon {
-  font-size: 16px;
-  width: 16px;
-  height: 16px;
-}
-
-.breadcrumb-link {
-  cursor: pointer;
-}
-
-.page-title {
+.header-row h2 {
   margin: 0;
-  font-size: 24px;
-  line-height: 1.15;
-  font-weight: 700;
-  letter-spacing: -0.015em;
-  color: #0f172a;
-}
-
-.subtitle {
-  margin: 0;
-  color: #667085;
-  font-size: 14px;
-  line-height: 1.45;
-}
-
-.dot {
-  margin: 0 8px;
-}
-
-.add-btn {
-  height: 46px;
-  border-radius: 12px;
-  padding: 0 18px;
-  font-size: 15px;
-  font-weight: 600;
-  box-shadow: none;
-}
-
-.add-btn mat-icon {
-  margin-right: 6px;
-}
-
-.toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  justify-content: flex-end;
-  align-items: flex-start;
-  margin-bottom: 18px;
-}
-
-.search-field {
-  width: 300px;
-}
-
-.stage-filter-field {
-  min-width: 200px;
-}
-
-::ng-deep .search-field .mat-mdc-text-field-wrapper,
-::ng-deep .stage-field .mat-mdc-text-field-wrapper,
-::ng-deep .stage-filter-field .mat-mdc-text-field-wrapper {
-  border-radius: 12px !important;
-  background: #fff;
-}
-
-::ng-deep .search-field .mdc-notched-outline__leading,
-::ng-deep .search-field .mdc-notched-outline__notch,
-::ng-deep .search-field .mdc-notched-outline__trailing,
-::ng-deep .stage-field .mdc-notched-outline__leading,
-::ng-deep .stage-field .mdc-notched-outline__notch,
-::ng-deep .stage-field .mdc-notched-outline__trailing,
-::ng-deep .stage-filter-field .mdc-notched-outline__leading,
-::ng-deep .stage-filter-field .mdc-notched-outline__notch,
-::ng-deep .stage-filter-field .mdc-notched-outline__trailing {
-  border-color: #e5e7eb !important;
+  font-size: 1.5rem;
 }
 
 .page-title {
@@ -134,10 +26,9 @@
 }
 
 .table-wrap {
-  overflow: hidden;
-  border-radius: 16px;
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .candidates-table {
@@ -146,66 +37,28 @@
 }
 
 .candidates-table th {
-  background: #f9fafb;
-  color: #6b7280;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.7);
+  font-size: 0.75rem;
   text-transform: uppercase;
-  border-bottom: 1px solid #e5e7eb;
+  letter-spacing: 0.05em;
 }
 
 .candidates-table td,
 .candidates-table th {
-  padding: 16px 18px;
+  padding: 1rem 1.25rem;
 }
 
-.candidates-table .mat-mdc-header-row,
-.candidates-table .mat-mdc-row,
-.candidates-table .mat-row {
-  height: auto;
+.candidates-table tr.mat-row:hover {
+  background: rgba(0, 0, 0, 0.02);
 }
 
-.candidates-table .mat-mdc-row,
-.candidates-table .mat-row {
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.candidates-table .mat-mdc-row:last-child,
-.candidates-table .mat-row:last-child {
-  border-bottom: none;
-}
-
-.stage-field {
-  width: 150px;
-}
-
-.resume-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  text-decoration: none;
-  color: #2563eb;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.resume-link mat-icon {
-  font-size: 17px;
-  width: 17px;
-  height: 17px;
+.stage-select {
+  min-width: 140px;
 }
 
 .no-data td {
   text-align: center;
-  color: #6b7280;
-  padding: 28px;
-}
-
-.loading-row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 2rem 0;
-  color: #667085;
+  color: rgba(0, 0, 0, 0.5);
+  padding: 2rem;
 }

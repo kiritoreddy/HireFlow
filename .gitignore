@@ -5,6 +5,10 @@
 .Spotlight-V100
 .Trashes
 
+<<<<<<< HEAD
+# Cursor IDE
+.cursor/
+=======
 # Local editor metadata (optional)
 .cursor/
 
@@ -56,3 +60,4 @@ dist/
 # OS generated files
 Thumbs.db
 ehthumbs.db
+>>>>>>> origin/main
