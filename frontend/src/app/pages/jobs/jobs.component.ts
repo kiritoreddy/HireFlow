@@ -60,13 +60,13 @@ export class JobsComponent implements OnInit, AfterViewInit {
   @ViewChild(MatSort) sort?: MatSort;
   @ViewChild(MatPaginator) paginator?: MatPaginator;
 
-  /** Full list from API before client-side filters */
-  private allJobs: Job[] = [];
-
   searchQuery = '';
   statusFilter: StatusFilter = 'all';
   loading = signal(false);
-  loadError = signal('');
+  loadError = signal(false);
+
+  /** Last successful fetch (source for local filters). */
+  private allJobs: Job[] = [];
 
   get totalJobs(): number {
     return this.allJobs.length;
@@ -82,41 +82,45 @@ export class JobsComponent implements OnInit, AfterViewInit {
 
   get emptyMessage(): string {
     if (this.loading()) return '';
-    if (this.loadError()) return '';
     const data = this.dataSource.data;
     if (data.length === 0)
-      return this.searchQuery || this.statusFilter !== 'all'
-        ? 'No jobs match your filters. Try clearing filters.'
-        : 'No jobs yet. Add your first job to get started.';
+      return this.loadError()
+        ? 'Could not load jobs. Check that the backend is running and you are logged in.'
+        : this.searchQuery || this.statusFilter !== 'all'
+          ? 'No jobs match your filters. Try clearing filters.'
+          : 'No jobs yet. Add your first job to get started.';
     return '';
   }
 
   ngOnInit(): void {
-    this.loadFromServer();
+    this.loadFromApi();
   }
 
   ngAfterViewInit(): void {
+    this.bindTableControls();
+  }
+
+  private bindTableControls(): void {
     if (this.sort) this.dataSource.sort = this.sort;
     if (this.paginator) this.dataSource.paginator = this.paginator;
   }
 
-  loadFromServer(): void {
+  loadFromApi(): void {
     this.loading.set(true);
-    this.loadError.set('');
-    this.jobsApi.list().subscribe({
+    this.loadError.set(false);
+    this.jobsApi.getJobs().subscribe({
       next: (jobs) => {
         this.allJobs = jobs;
+        this.loading.set(false);
         this.applyLocalFilters();
-        this.loading.set(false);
+        queueMicrotask(() => this.bindTableControls());
       },
-      error: (err) => {
-        this.loading.set(false);
-        const msg =
-          err?.error?.error ?? err?.message ?? 'Could not load jobs. Is the backend running?';
-        this.loadError.set(msg);
+      error: () => {
         this.allJobs = [];
-        this.dataSource.data = [];
-        this.snackBar.open(String(msg), 'Close', { duration: 5000 });
+        this.loading.set(false);
+        this.loadError.set(true);
+        this.applyLocalFilters();
+        this.snackBar.open('Failed to load jobs.', 'Close', { duration: 4000 });
       },
     });
   }
@@ -136,10 +140,7 @@ export class JobsComponent implements OnInit, AfterViewInit {
       );
     }
     this.dataSource.data = list;
-
-    if (this.paginator) {
-      this.paginator.firstPage();
-    }
+    if (this.paginator) this.paginator.firstPage();
   }
 
   refresh(): void {
@@ -147,22 +148,33 @@ export class JobsComponent implements OnInit, AfterViewInit {
   }
 
   onSearchChange(): void {
-    this.applyLocalFilters();
+    this.refresh();
   }
 
   onStatusFilterChange(): void {
-    this.applyLocalFilters();
+    this.refresh();
   }
 
   clearFilters(): void {
     if (!this.searchQuery && this.statusFilter === 'all') return;
     this.searchQuery = '';
     this.statusFilter = 'all';
-    this.applyLocalFilters();
+    this.refresh();
   }
 
   getCandidateCount(job: Job): number {
-    return job.candidateCount ?? 0;
+    if (job.candidateCount != null) return job.candidateCount;
+    const a = job.appliedCount ?? 0;
+    const b = job.interviewCount ?? 0;
+    const c = job.selectedCount ?? 0;
+    const d = job.rejectedCount ?? 0;
+    return a + b + c + d;
+  }
+
+  private apiError(err: unknown, fallback: string): void {
+    const e = err as { error?: { error?: string }; status?: number };
+    const msg = e?.error?.error ?? (e?.status === 403 ? 'You do not have permission for this action.' : fallback);
+    this.snackBar.open(msg, 'Close', { duration: 4000 });
   }
 
   onCreateJobClick(): void {
@@ -175,7 +187,7 @@ export class JobsComponent implements OnInit, AfterViewInit {
       prompt('Enter job description', 'New job posting')?.trim() || 'New job posting';
 
     this.jobsApi
-      .create({
+      .createJob({
         title: title.trim(),
         department,
         location,
@@ -184,17 +196,10 @@ export class JobsComponent implements OnInit, AfterViewInit {
       })
       .subscribe({
         next: () => {
-          this.snackBar.open('Job created successfully.', 'Close', {
-            duration: 2500,
-            horizontalPosition: 'right',
-            verticalPosition: 'top',
-          });
-          this.loadFromServer();
+          this.snackBar.open('Job created successfully.', 'Close', { duration: 2500 });
+          this.loadFromApi();
         },
-        error: (err) => {
-          const msg = err?.error?.error ?? 'Failed to create job (check role: hiring_manager or admin)';
-          this.snackBar.open(msg, 'Close', { duration: 5000 });
-        },
+        error: (err) => this.apiError(err, 'Failed to create job'),
       });
   }
 
@@ -207,52 +212,30 @@ export class JobsComponent implements OnInit, AfterViewInit {
     const description = prompt('Edit description', job.description)?.trim() || job.description;
 
     this.jobsApi
-      .update(job.id, {
+      .updateJob({
+        ...job,
         title: title.trim(),
         department,
         location,
         description,
-        status: job.status,
       })
       .subscribe({
         next: () => {
-          this.snackBar.open('Job updated successfully.', 'Close', {
-            duration: 2500,
-            horizontalPosition: 'right',
-            verticalPosition: 'top',
-          });
-          this.loadFromServer();
+          this.snackBar.open('Job updated successfully.', 'Close', { duration: 2500 });
+          this.loadFromApi();
         },
-        error: (err) => {
-          const msg = err?.error?.error ?? 'Failed to update job';
-          this.snackBar.open(msg, 'Close', { duration: 5000 });
-        },
+        error: (err) => this.apiError(err, 'Failed to update job'),
       });
   }
 
   toggleJobStatus(job: Job): void {
     const newStatus: Job['status'] = job.status === 'Open' ? 'Closed' : 'Open';
-    this.jobsApi
-      .update(job.id, {
-        title: job.title,
-        department: job.department,
-        location: job.location,
-        description: job.description,
-        status: newStatus,
-      })
-      .subscribe({
-        next: () => {
-          this.snackBar.open(`Job marked as ${newStatus}.`, 'Close', {
-            duration: 2500,
-            horizontalPosition: 'right',
-            verticalPosition: 'top',
-          });
-          this.loadFromServer();
-        },
-        error: (err) => {
-          const msg = err?.error?.error ?? 'Failed to update job status';
-          this.snackBar.open(msg, 'Close', { duration: 5000 });
-        },
-      });
+    this.jobsApi.updateJob({ ...job, status: newStatus }).subscribe({
+      next: () => {
+        this.snackBar.open(`Job marked as ${newStatus}.`, 'Close', { duration: 2500 });
+        this.loadFromApi();
+      },
+      error: (err) => this.apiError(err, 'Failed to update job status'),
+    });
   }
 }

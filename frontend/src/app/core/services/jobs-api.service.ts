@@ -4,40 +4,53 @@ import { Observable, map } from 'rxjs';
 import { JOBS_ENDPOINTS } from '../config/api.config';
 import { Job } from '../models/job.model';
 
-interface JobDetailBody {
+/** Raw job row from GET /jobs (includes candidateCount fields). */
+interface BackendJobListItem {
   id: number;
   title: string;
   description: string;
   department: string;
   location: string;
   status: string;
+  created_at?: string;
+  updated_at?: string;
+  candidateCount?: number;
+  appliedCount?: number;
+  interviewCount?: number;
+  selectedCount?: number;
+  rejectedCount?: number;
 }
 
-interface JobListRow extends JobDetailBody {
-  created_at: string;
-  updated_at: string;
-  candidateCount: number;
-  appliedCount: number;
-  interviewCount: number;
-  selectedCount: number;
-  rejectedCount: number;
-}
-
-function rowToJob(r: JobListRow): Job {
+function mapListItem(b: BackendJobListItem): Job {
+  const st = (b.status || 'Open') === 'Closed' ? 'Closed' : 'Open';
   return {
-    id: r.id,
-    title: r.title,
-    description: r.description ?? '',
-    department: r.department ?? '',
-    location: r.location ?? '',
-    status: (r.status === 'Closed' ? 'Closed' : 'Open') as Job['status'],
-    createdAt: r.created_at,
-    updatedAt: r.updated_at,
-    candidateCount: r.candidateCount,
-    appliedCount: r.appliedCount,
-    interviewCount: r.interviewCount,
-    selectedCount: r.selectedCount,
-    rejectedCount: r.rejectedCount,
+    id: b.id,
+    title: b.title,
+    description: b.description ?? '',
+    department: b.department ?? '',
+    location: b.location ?? '',
+    status: st,
+    createdAt: b.created_at,
+    updatedAt: b.updated_at,
+    candidateCount: b.candidateCount,
+    appliedCount: b.appliedCount,
+    interviewCount: b.interviewCount,
+    selectedCount: b.selectedCount,
+    rejectedCount: b.rejectedCount,
+  };
+}
+
+function mapJobBody(b: Record<string, unknown>): Job {
+  const st = (String(b['status'] ?? 'Open')) === 'Closed' ? 'Closed' : 'Open';
+  return {
+    id: Number(b['id']),
+    title: String(b['title'] ?? ''),
+    description: String(b['description'] ?? ''),
+    department: String(b['department'] ?? ''),
+    location: String(b['location'] ?? ''),
+    status: st,
+    createdAt: typeof b['created_at'] === 'string' ? b['created_at'] : undefined,
+    updatedAt: typeof b['updated_at'] === 'string' ? b['updated_at'] : undefined,
   };
 }
 
@@ -45,52 +58,38 @@ function rowToJob(r: JobListRow): Job {
 export class JobsApiService {
   private http = inject(HttpClient);
 
-  list(): Observable<Job[]> {
-    return this.http.get<JobListRow[]>(JOBS_ENDPOINTS.list).pipe(map((rows) => rows.map(rowToJob)));
+  getJobs(): Observable<Job[]> {
+    return this.http.get<BackendJobListItem[]>(JOBS_ENDPOINTS.list).pipe(map((list) => list.map(mapListItem)));
   }
 
-  getById(id: number): Observable<Job> {
-    return this.http.get<JobDetailBody>(JOBS_ENDPOINTS.detail(id)).pipe(
-      map((r) => ({
-        id: r.id,
-        title: r.title,
-        description: r.description ?? '',
-        department: r.department ?? '',
-        location: r.location ?? '',
-        status: (r.status === 'Closed' ? 'Closed' : 'Open') as Job['status'],
-      }))
-    );
+  getJobById(id: number): Observable<Job> {
+    return this.http.get<Record<string, unknown>>(JOBS_ENDPOINTS.byId(id)).pipe(map(mapJobBody));
   }
 
-  private detailToJob(r: JobDetailBody): Job {
-    return {
-      id: r.id,
-      title: r.title,
-      description: r.description ?? '',
-      department: r.department ?? '',
-      location: r.location ?? '',
-      status: (r.status === 'Closed' ? 'Closed' : 'Open') as Job['status'],
-    };
-  }
-
-  create(job: Pick<Job, 'title' | 'description' | 'department' | 'location' | 'status'>): Observable<Job> {
+  createJob(payload: Pick<Job, 'title' | 'description' | 'department' | 'location' | 'status'>): Observable<Job> {
     const body = {
+      title: payload.title,
+      description: payload.description,
+      department: payload.department,
+      location: payload.location,
+      status: payload.status,
+    };
+    return this.http.post<Record<string, unknown>>(JOBS_ENDPOINTS.list, body).pipe(map(mapJobBody));
+  }
+
+  updateJob(job: Job): Observable<Job> {
+    const body = {
+      id: job.id,
       title: job.title,
       description: job.description,
       department: job.department,
       location: job.location,
       status: job.status,
     };
-    return this.http.post<JobDetailBody>(JOBS_ENDPOINTS.list, body).pipe(map((r) => this.detailToJob(r)));
+    return this.http.put<Record<string, unknown>>(JOBS_ENDPOINTS.byId(job.id), body).pipe(map(mapJobBody));
   }
 
-  update(id: number, job: Partial<Pick<Job, 'title' | 'description' | 'department' | 'location' | 'status'>>): Observable<Job> {
-    return this.http
-      .put<JobDetailBody>(JOBS_ENDPOINTS.detail(id), { id, ...job })
-      .pipe(map((r) => this.detailToJob(r)));
-  }
-
-  delete(id: number): Observable<void> {
-    return this.http.delete<void>(JOBS_ENDPOINTS.detail(id));
+  deleteJob(id: number): Observable<void> {
+    return this.http.delete(JOBS_ENDPOINTS.byId(id)).pipe(map(() => undefined));
   }
 }
