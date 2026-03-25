@@ -14,6 +14,17 @@
   font-size: 1.5rem;
 }
 
+.page-title {
+  margin: 0;
+  font-size: 1.75rem;
+}
+
+.loading-wrap {
+  min-height: 180px;
+  display: grid;
+  place-items: center;
+}
+
 .table-wrap {
   overflow-x: auto;
   border-radius: 8px;

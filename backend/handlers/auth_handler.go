@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"strings"
@@ -282,6 +283,32 @@ func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]string{"error": "Email is required"})
 		return
 	}
+	if !models.ValidateEmail(req.Email) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid email format"})
+		return
+	}
+
+	var user models.User
+	if err := h.DB.Where("LOWER(email) = ?", strings.ToLower(req.Email)).First(&user).Error; err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			log.Printf("forgot-password: lookup user: %v", err)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Failed to process request"})
+			return
+		}
+		// Unknown email: same generic message, no token (avoid useless tokens that never match DB).
+		resp := ForgotPasswordResponse{
+			Message: "If an account exists for that email, we've sent reset instructions.",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(resp)
+		return
+	}
+
 	token, err := generateResetToken()
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
@@ -289,18 +316,20 @@ func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to generate reset token"})
 		return
 	}
-	if models.ValidateEmail(req.Email) {
-		var user models.User
-		if err := h.DB.Where("LOWER(email) = ?", strings.ToLower(req.Email)).First(&user).Error; err == nil {
-			sum := sha256.Sum256([]byte(token))
-			reset := models.PasswordResetToken{
-				UserID:    user.ID,
-				TokenHash: hex.EncodeToString(sum[:]),
-				ExpiresAt: time.Now().Add(resetTokenTTL),
-			}
-			_ = h.DB.Create(&reset).Error
-		}
+	sum := sha256.Sum256([]byte(token))
+	reset := models.PasswordResetToken{
+		UserID:    user.ID,
+		TokenHash: hex.EncodeToString(sum[:]),
+		ExpiresAt: time.Now().Add(resetTokenTTL),
 	}
+	if err := h.DB.Create(&reset).Error; err != nil {
+		log.Printf("forgot-password: save token: %v", err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to create reset token"})
+		return
+	}
+
 	resp := ForgotPasswordResponse{
 		Message:    "If an account exists for that email, we've sent reset instructions.",
 		ResetToken: token,

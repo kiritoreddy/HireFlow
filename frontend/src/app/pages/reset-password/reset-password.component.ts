@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -23,7 +23,7 @@ import { AuthService } from '../../core/auth/auth.service';
   templateUrl: './reset-password.component.html',
   styleUrl: './reset-password.component.scss',
 })
-export class ResetPasswordComponent {
+export class ResetPasswordComponent implements OnInit {
   password = '';
   confirmPassword = '';
   error = '';
@@ -35,13 +35,20 @@ export class ResetPasswordComponent {
     private auth: AuthService,
     private router: Router,
     private route: ActivatedRoute
-  ) {
-    // Demo: token from navigation state (forgot-password button) or sessionStorage, then query param
-    const fromState = this.router.getCurrentNavigation()?.extras?.state as { resetToken?: string } | undefined;
+  ) {}
+
+  ngOnInit(): void {
+    // Router state is on history.state after navigation (getCurrentNavigation() is usually null here).
+    let fromHistory = '';
+    const st = history.state;
+    if (st && typeof st === 'object' && 'resetToken' in st) {
+      const v = (st as { resetToken?: unknown }).resetToken;
+      if (typeof v === 'string') fromHistory = v.trim();
+    }
     this.token =
-      fromState?.resetToken ??
-      sessionStorage.getItem('hireflow_reset_token') ??
-      this.route.snapshot.queryParamMap.get('token') ??
+      fromHistory ||
+      sessionStorage.getItem('hireflow_reset_token')?.trim() ||
+      this.route.snapshot.queryParamMap.get('token')?.trim() ||
       '';
   }
 
