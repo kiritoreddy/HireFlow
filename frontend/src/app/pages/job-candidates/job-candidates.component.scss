@@ -122,6 +122,17 @@
   border-color: #e5e7eb !important;
 }
 
+.page-title {
+  margin: 0;
+  font-size: 1.75rem;
+}
+
+.loading-wrap {
+  min-height: 180px;
+  display: grid;
+  place-items: center;
+}
+
 .table-wrap {
   overflow: hidden;
   border-radius: 16px;
