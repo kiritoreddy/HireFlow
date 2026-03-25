@@ -5,7 +5,7 @@
 .Spotlight-V100
 .Trashes
 
-# Cursor IDE
+# Local editor metadata (optional)
 .cursor/
 
 # Go compiled binaries
