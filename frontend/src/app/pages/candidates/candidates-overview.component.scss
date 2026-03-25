@@ -45,6 +45,25 @@
   line-height: 1.45;
 }
 
+.state-wrap {
+  min-height: 180px;
+  display: grid;
+  place-items: center;
+}
+
+.state-wrap.error {
+  gap: 10px;
+  color: #6b7280;
+}
+
+.retry-btn {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 8px 14px;
+  background: #fff;
+  cursor: pointer;
+}
+
 .cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
@@ -172,5 +191,5 @@
 
 .error-msg {
   color: #b71c1c;
-  padding: 1rem 0;
+  padding: 0;
 }

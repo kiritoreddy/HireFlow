@@ -15,7 +15,11 @@
       <span>Loading jobs…</span>
     </div>
   } @else if (loadError()) {
-    <p class="error-msg">Could not load jobs. Ensure the backend is running and you are signed in.</p>
+    <div class="state-wrap error">
+      <mat-icon>error_outline</mat-icon>
+      <p class="error-msg">Could not load jobs. Ensure the backend is running and you are signed in.</p>
+      <button class="retry-btn" type="button" (click)="refresh()">Retry</button>
+    </div>
   } @else {
   <div class="cards">
     <div class="candidate-card" *ngFor="let job of jobsWithCounts">
@@ -35,17 +39,14 @@
           <span class="label">Applied</span>
           <span class="value">{{ job.applied }}</span>
         </div>
-
         <div class="stat-box">
           <span class="label">Interview</span>
           <span class="value">{{ job.interview }}</span>
         </div>
-
         <div class="stat-box">
           <span class="label">Selected</span>
           <span class="value">{{ job.selected }}</span>
         </div>
-
         <div class="stat-box">
           <span class="label">Rejected</span>
           <span class="value">{{ job.rejected }}</span>

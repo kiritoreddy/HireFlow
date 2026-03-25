@@ -14,8 +14,10 @@ import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { JobsApiService } from '../../core/services/jobs-api.service';
 import { Job } from '../../core/models/job.model';
+import { JobFormDialogComponent, JobFormValue } from './job-form-dialog/job-form-dialog.component';
 
 type StatusFilter = 'all' | 'Open' | 'Closed';
 
@@ -38,6 +40,7 @@ type StatusFilter = 'all' | 'Open' | 'Closed';
     MatPaginatorModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
+    MatDialogModule,
   ],
   templateUrl: './jobs.component.html',
   styleUrl: './jobs.component.scss',
@@ -45,6 +48,7 @@ type StatusFilter = 'all' | 'Open' | 'Closed';
 export class JobsComponent implements OnInit, AfterViewInit {
   private jobsApi = inject(JobsApiService);
   private snackBar = inject(MatSnackBar);
+  private dialog = inject(MatDialog);
 
   displayedColumns: string[] = [
     'title',
@@ -57,8 +61,18 @@ export class JobsComponent implements OnInit, AfterViewInit {
   ];
   dataSource = new MatTableDataSource<Job>([]);
 
-  @ViewChild(MatSort) sort?: MatSort;
-  @ViewChild(MatPaginator) paginator?: MatPaginator;
+  private sort?: MatSort;
+  private paginator?: MatPaginator;
+
+  @ViewChild(MatSort) set matSort(value: MatSort | undefined) {
+    this.sort = value;
+    this.bindTableControls();
+  }
+
+  @ViewChild(MatPaginator) set matPaginator(value: MatPaginator | undefined) {
+    this.paginator = value;
+    this.bindTableControls();
+  }
 
   searchQuery = '';
   statusFilter: StatusFilter = 'all';
@@ -178,54 +192,48 @@ export class JobsComponent implements OnInit, AfterViewInit {
   }
 
   onCreateJobClick(): void {
-    const title = prompt('Enter job title');
-    if (!title?.trim()) return;
+    const ref = this.dialog.open(JobFormDialogComponent, {
+      width: '640px',
+      maxWidth: '95vw',
+      disableClose: true,
+      data: {},
+    });
 
-    const department = prompt('Enter department', 'Engineering')?.trim() || 'General';
-    const location = prompt('Enter location', 'Remote')?.trim() || 'Remote';
-    const description =
-      prompt('Enter job description', 'New job posting')?.trim() || 'New job posting';
-
-    this.jobsApi
-      .createJob({
-        title: title.trim(),
-        department,
-        location,
-        description,
-        status: 'Open',
-      })
-      .subscribe({
+    ref.afterClosed().subscribe((value?: JobFormValue) => {
+      if (!value) return;
+      this.jobsApi.createJob(value).subscribe({
         next: () => {
           this.snackBar.open('Job created successfully.', 'Close', { duration: 2500 });
           this.loadFromApi();
         },
         error: (err) => this.apiError(err, 'Failed to create job'),
       });
+    });
   }
 
   editJob(job: Job): void {
-    const title = prompt('Edit job title', job.title);
-    if (!title?.trim()) return;
+    const ref = this.dialog.open(JobFormDialogComponent, {
+      width: '640px',
+      maxWidth: '95vw',
+      disableClose: true,
+      data: { job },
+    });
 
-    const department = prompt('Edit department', job.department)?.trim() || job.department;
-    const location = prompt('Edit location', job.location)?.trim() || job.location;
-    const description = prompt('Edit description', job.description)?.trim() || job.description;
-
-    this.jobsApi
-      .updateJob({
-        ...job,
-        title: title.trim(),
-        department,
-        location,
-        description,
-      })
-      .subscribe({
-        next: () => {
-          this.snackBar.open('Job updated successfully.', 'Close', { duration: 2500 });
-          this.loadFromApi();
-        },
-        error: (err) => this.apiError(err, 'Failed to update job'),
-      });
+    ref.afterClosed().subscribe((value?: JobFormValue) => {
+      if (!value) return;
+      this.jobsApi
+        .updateJob({
+          ...job,
+          ...value,
+        })
+        .subscribe({
+          next: () => {
+            this.snackBar.open('Job updated successfully.', 'Close', { duration: 2500 });
+            this.loadFromApi();
+          },
+          error: (err) => this.apiError(err, 'Failed to update job'),
+        });
+    });
   }
 
   toggleJobStatus(job: Job): void {

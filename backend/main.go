@@ -27,6 +27,8 @@ func main() {
 
 	// Seed default admin user if none exists
 	seeder.SeedAdmin(db)
+	// Sample jobs / candidates / applications when DB has no jobs yet
+	seeder.SeedDemoData(db)
 
 	// Setup routes with CORS middleware
 	handler := routes.SetupRoutes(db)
