@@ -1,11 +1,10 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
 import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
@@ -17,7 +16,6 @@ import { AuthService } from '../../core/auth/auth.service';
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
-    MatIconModule,
     RouterLink,
   ],
   templateUrl: './login.component.html',
@@ -29,13 +27,11 @@ export class LoginComponent implements OnInit {
   error = '';
   loading = false;
   resetSuccess = false;
-  hidePassword = true;
 
   constructor(
     private auth: AuthService,
     private router: Router,
-    private route: ActivatedRoute,
-    private cdr: ChangeDetectorRef
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
@@ -48,16 +44,13 @@ export class LoginComponent implements OnInit {
   onSubmit(): void {
     this.error = '';
     this.loading = true;
-
     this.auth.login(this.email, this.password).subscribe((result) => {
       this.loading = false;
-
       if (result === true) {
         this.router.navigate(['/']);
       } else {
         this.error = (result as { error: string }).error ?? 'Invalid credentials';
       }
-      this.cdr.detectChanges(); // force immediate UI update
     });
   }
 }

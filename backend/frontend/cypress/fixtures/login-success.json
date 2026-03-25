@@ -1,0 +1,11 @@
+{
+  "user": {
+    "id": 1,
+    "name": "Test User",
+    "email": "test@hireflow.com",
+    "role": "admin",
+    "is_active": true
+  },
+  "access_token": "e2e-test-token",
+  "expires_in": 3600
+}
