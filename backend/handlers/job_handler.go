@@ -19,19 +19,19 @@ type JobHandler struct {
 // JobResponse extends Job model with candidateCount for the jobs list
 // candidateCount is computed via LEFT JOIN with applications table
 type JobResponse struct {
-	ID              uint   `json:"id"`
-	Title           string `json:"title"`
-	Description     string `json:"description"`
-	Department      string `json:"department"`
-	Location        string `json:"location"`
-	Status          string `json:"status"`
-	CreatedAt       string `json:"created_at"`
-	UpdatedAt       string `json:"updated_at"`
-	CandidateCount  int64  `json:"candidateCount"` // Total applications (non-withdrawn)
-	AppliedCount    int64  `json:"appliedCount"`
-	InterviewCount  int64  `json:"interviewCount"`
-	SelectedCount   int64  `json:"selectedCount"`
-	RejectedCount   int64  `json:"rejectedCount"`
+	ID             uint   `json:"id"`
+	Title          string `json:"title"`
+	Description    string `json:"description"`
+	Department     string `json:"department"`
+	Location       string `json:"location"`
+	Status         string `json:"status"`
+	CreatedAt      string `json:"created_at"`
+	UpdatedAt      string `json:"updated_at"`
+	CandidateCount int64  `json:"candidateCount"`
+	AppliedCount   int64  `json:"appliedCount"`
+	InterviewCount int64  `json:"interviewCount"`
+	SelectedCount  int64  `json:"selectedCount"`
+	RejectedCount  int64  `json:"rejectedCount"`
 }
 
 // CreateJob handles POST /jobs - Create new job posting
@@ -73,50 +73,25 @@ func (h *JobHandler) GetAllJobs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	type aggRow struct {
-		JobID  uint   `gorm:"column:job_id"`
-		Status string `gorm:"column:status"`
-		Cnt    int64  `gorm:"column:cnt"`
-	}
-	var aggs []aggRow
-	_ = h.DB.Raw(`
-		SELECT job_id, status, COUNT(*) AS cnt
-		FROM applications
-		WHERE status != ?
-		GROUP BY job_id, status
-	`, "WITHDRAWN").Scan(&aggs).Error
-
-	countsByJob := make(map[uint]map[string]int64)
-	for _, row := range aggs {
-		if countsByJob[row.JobID] == nil {
-			countsByJob[row.JobID] = make(map[string]int64)
-		}
-		countsByJob[row.JobID][row.Status] = row.Cnt
-	}
+	stageAgg := h.applicationStageCountsByJob()
 
 	response := make([]JobResponse, 0, len(jobs))
 	for _, job := range jobs {
-		m := countsByJob[job.ID]
-		applied := m["APPLIED"]
-		interview := m["INTERVIEW"]
-		selected := m["SELECTED"]
-		rejected := m["REJECTED"]
-		total := applied + interview + selected + rejected
-
+		agg := stageAgg[job.ID]
 		response = append(response, JobResponse{
-			ID:              job.ID,
-			Title:           job.Title,
-			Description:     job.Description,
-			Department:      job.Department,
-			Location:        job.Location,
-			Status:          job.Status,
-			CreatedAt:       job.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-			UpdatedAt:       job.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
-			CandidateCount:  total,
-			AppliedCount:    applied,
-			InterviewCount:  interview,
-			SelectedCount:   selected,
-			RejectedCount:   rejected,
+			ID:             job.ID,
+			Title:          job.Title,
+			Description:    job.Description,
+			Department:     job.Department,
+			Location:       job.Location,
+			Status:         job.Status,
+			CreatedAt:      job.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+			UpdatedAt:      job.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+			CandidateCount: agg.total,
+			AppliedCount:   agg.applied,
+			InterviewCount: agg.interview,
+			SelectedCount:  agg.selected,
+			RejectedCount:  agg.rejected,
 		})
 	}
 
@@ -255,4 +230,39 @@ func (h *JobHandler) DeleteJob(w http.ResponseWriter, r *http.Request) {
 
 	// Return 204 No Content status (successful deletion)
 	w.WriteHeader(http.StatusNoContent)
+}
+
+type jobStageAgg struct {
+	total, applied, interview, selected, rejected int64
+}
+
+func (h *JobHandler) applicationStageCountsByJob() map[uint]jobStageAgg {
+	rows := []struct {
+		JobID  uint
+		Status string
+		Cnt    int64
+	}{}
+	_ = h.DB.Raw(`
+		SELECT job_id, UPPER(TRIM(status)) AS status, COUNT(*) AS cnt
+		FROM applications
+		WHERE deleted_at IS NULL
+		GROUP BY job_id, UPPER(TRIM(status))
+	`).Scan(&rows)
+	out := make(map[uint]jobStageAgg)
+	for _, r := range rows {
+		a := out[r.JobID]
+		a.total += r.Cnt
+		switch r.Status {
+		case "APPLIED":
+			a.applied += r.Cnt
+		case "INTERVIEW":
+			a.interview += r.Cnt
+		case "SELECTED":
+			a.selected += r.Cnt
+		case "REJECTED", "WITHDRAWN":
+			a.rejected += r.Cnt
+		}
+		out[r.JobID] = a
+	}
+	return out
 }
