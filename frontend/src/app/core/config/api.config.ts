@@ -16,10 +16,11 @@ export const USERS_ENDPOINTS = {
 
 export const JOBS_ENDPOINTS = {
   list: `${API_BASE_URL}/jobs`,
-  detail: (id: number) => `${API_BASE_URL}/jobs/${id}`,
-  applications: (jobId: number) => `${API_BASE_URL}/jobs/${jobId}/applications`,
+  byId: (id: number) => `${API_BASE_URL}/jobs/${id}`,
 } as const;
 
-export const APPLICATIONS_ENDPOINTS = {
-  patch: (applicationId: string) => `${API_BASE_URL}/applications/${applicationId}`,
+export const CANDIDATE_ENDPOINTS = {
+  apply: `${API_BASE_URL}/api/candidate/apply`,
+  byJob: (jobId: number) => `${API_BASE_URL}/api/candidate/jobs/${jobId}/applications`,
+  stage: (applicationId: string) => `${API_BASE_URL}/api/candidate/applications/${applicationId}/stage`,
 } as const;

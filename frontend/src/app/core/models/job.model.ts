@@ -1,4 +1,4 @@
-/** Job model – aligned with backend GET /jobs JobResponse. */
+/** Job model – aligned with backend GET /jobs response. */
 export interface Job {
   id: number;
   title: string;

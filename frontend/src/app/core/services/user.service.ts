@@ -87,7 +87,9 @@ export class UserService {
 
   /** Set user active/inactive via backend (admin). Returns observable; errors surface to caller. */
   setUserActive(id: string, isActive: boolean): Observable<User> {
-    return this.http.patch<BackendUser>(USERS_ENDPOINTS.patch(id), { is_active: isActive }).pipe(
+    return this.http
+      .patch<BackendUser>(USERS_ENDPOINTS.patch(id), { is_active: isActive })
+      .pipe(
         map(backendUserToFrontend),
         tap((user) => this.users.update((list) => list.map((u) => (u.id === id ? user : u)))),
         catchError((err) => {
