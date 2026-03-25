@@ -1,0 +1,74 @@
+.page-title {
+  font-size: 32px;
+  margin: 0;
+}
+
+.subtitle {
+  margin: 8px 0 32px;
+  color: #6b7280;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+  gap: 24px;
+}
+
+.card {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
+  background: white;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+
+.badge {
+  background: #dcfce7;
+  color: #15803d;
+
+  &.closed {
+    background: #f3f4f6;
+    color: #6b7280;
+  }
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  align-self: flex-start;
+}
+
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin: 20px 0 24px;
+}
+
+
+.stats div {
+  background: #f9fafb;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.view-btn {
+  display: block;
+  text-align: center;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.view-btn:hover {
+  background: #f9fafb;
+}

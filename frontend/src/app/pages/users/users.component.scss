@@ -1,0 +1,124 @@
+.users-page {
+  padding: 0;
+}
+
+.users-card {
+  overflow: hidden;
+}
+
+mat-card-header {
+  padding: 1.5rem 1.5rem 0;
+}
+
+.header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+}
+
+mat-card-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+mat-card-subtitle {
+  margin: 0.25rem 0 0;
+}
+
+.header-actions {
+  flex-shrink: 0;
+}
+
+.header-actions button mat-icon {
+  margin-right: 0.5rem;
+  vertical-align: middle;
+  font-size: 1.2rem;
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+mat-card-content {
+  padding: 1rem 1.5rem 1.5rem;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.users-table {
+  width: 100%;
+  background: #fff;
+}
+
+.users-table th {
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.7);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.users-table td,
+.users-table th {
+  padding: 1rem 1.25rem;
+}
+
+.users-table tr.mat-row:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.role-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  background: rgba(0, 0, 0, 0.06);
+  color: rgba(0, 0, 0, 0.8);
+}
+
+.role-badge[data-role='admin'] {
+  background: rgba(103, 58, 183, 0.12);
+  color: #512da8;
+}
+
+.role-badge[data-role='hiring_manager'] {
+  background: rgba(0, 150, 136, 0.12);
+  color: #00695c;
+}
+
+.role-badge[data-role='interviewer'] {
+  background: rgba(33, 150, 243, 0.12);
+  color: #1565c0;
+}
+
+.role-badge[data-role='candidate'] {
+  background: rgba(255, 152, 0, 0.12);
+  color: #e65100;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  background: rgba(0, 150, 136, 0.12);
+  color: #00695c;
+}
+
+.status-badge.inactive {
+  background: rgba(0, 0, 0, 0.08);
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.no-data td {
+  text-align: center;
+  color: rgba(0, 0, 0, 0.5);
+  padding: 2rem;
+}

@@ -1,0 +1,32 @@
+<h2>Add Candidate</h2>
+
+<div style="display: flex; flex-direction: column; gap: 16px;">
+  <mat-form-field appearance="outline">
+    <mat-label>Name</mat-label>
+    <input matInput [(ngModel)]="name" />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Gmail</mat-label>
+    <input matInput type="email" [(ngModel)]="email" />
+  </mat-form-field>
+
+  <div>
+    <label><strong>Resume</strong></label><br />
+    <input #fileInput type="file" (change)="onFileChange($event)" />
+  </div>
+</div>
+
+<div
+  style="
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 20px;
+  "
+>
+  <button mat-button (click)="cancel()">Cancel</button>
+  <button mat-raised-button color="primary" (click)="addCandidate()">
+    Add Candidate
+  </button>
+</div>
