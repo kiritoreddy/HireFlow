@@ -1,7 +1,7 @@
-import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { AfterViewInit, Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MatDialogRef } from '@angular/material/dialog';
+import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -12,13 +12,15 @@ import { MatInputModule } from '@angular/material/input';
   imports: [
     CommonModule,
     FormsModule,
+    MatDialogModule,
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
   ],
   templateUrl: './add-candidate-dialog.component.html',
+  styleUrl: './add-candidate-dialog.component.scss',
 })
-export class AddCandidateDialogComponent implements OnInit {
+export class AddCandidateDialogComponent implements OnInit, AfterViewInit {
   name = '';
   email = '';
   resume = '';
@@ -46,14 +48,14 @@ export class AddCandidateDialogComponent implements OnInit {
     }
   }
 
-  onFileChange(event: Event) {
+  onFileChange(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       this.resume = input.files[0].name;
     }
   }
 
-  addCandidate() {
+  addCandidate(): void {
     if (!this.name.trim() || !this.email.trim()) {
       return;
     }
@@ -67,7 +69,7 @@ export class AddCandidateDialogComponent implements OnInit {
     this.dialogRef.close(payload);
   }
 
-  cancel() {
+  cancel(): void {
     this.dialogRef.close();
   }
 }

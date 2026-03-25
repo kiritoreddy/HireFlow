@@ -1,7 +1,6 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable, tap, map, catchError, of, throwError } from 'rxjs';
-import { AuthService } from '../auth/auth.service';
 import { User, UserFormValue, getDefaultPasswordForEmail } from '../models/user.model';
 import { USERS_ENDPOINTS } from '../config/api.config';
 
@@ -33,18 +32,12 @@ function backendUserToFrontend(b: BackendUser): User {
 export class UserService {
   private users = signal<User[]>([]);
   private http = inject(HttpClient);
-  private auth = inject(AuthService);
 
   readonly usersList = computed(() => this.users());
 
-  private authHeaders(): HttpHeaders {
-    const token = this.auth.getToken();
-    return new HttpHeaders(token ? { Authorization: `Bearer ${token}` } : {});
-  }
-
   /** Fetch all users from backend (admin). Updates internal list and returns it. */
   loadUsers(): Observable<User[]> {
-    return this.http.get<BackendUser[]>(USERS_ENDPOINTS.list, { headers: this.authHeaders() }).pipe(
+    return this.http.get<BackendUser[]>(USERS_ENDPOINTS.list).pipe(
       map((list) => list.map(backendUserToFrontend)),
       tap((list) => this.users.set(list)),
       catchError((err) => {
@@ -68,7 +61,7 @@ export class UserService {
       password,
       role: form.role,
     };
-    return this.http.post<BackendUser>(USERS_ENDPOINTS.create, body, { headers: this.authHeaders() }).pipe(
+    return this.http.post<BackendUser>(USERS_ENDPOINTS.create, body).pipe(
       map(backendUserToFrontend),
       tap((user) => this.users.update((list) => [...list, user])),
       catchError((err) => {
@@ -95,7 +88,7 @@ export class UserService {
   /** Set user active/inactive via backend (admin). Returns observable; errors surface to caller. */
   setUserActive(id: string, isActive: boolean): Observable<User> {
     return this.http
-      .patch<BackendUser>(USERS_ENDPOINTS.patch(id), { is_active: isActive }, { headers: this.authHeaders() })
+      .patch<BackendUser>(USERS_ENDPOINTS.patch(id), { is_active: isActive })
       .pipe(
         map(backendUserToFrontend),
         tap((user) => this.users.update((list) => list.map((u) => (u.id === id ? user : u)))),

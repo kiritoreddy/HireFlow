@@ -1,44 +1,158 @@
 <div class="jobs-page">
-  <h1 class="page-title">Jobs</h1>
-  <p class="subtitle">View open and closed job postings</p>
+  <header class="page-header">
+    <div class="header-text">
+      <h1 class="page-title" data-cy="jobs-title">Jobs</h1>
+      <p class="subtitle">View and manage open and closed job postings</p>
+    </div>
+    <button
+      mat-flat-button
+      color="primary"
+      class="add-job-btn"
+      type="button"
+      data-cy="jobs-add-btn"
+      (click)="onCreateJobClick()"
+    >
+      <mat-icon>add</mat-icon>
+      Add job
+    </button>
+  </header>
 
-  <div class="table-wrap">
-    <table mat-table [dataSource]="dataSource" class="jobs-table">
-      <ng-container matColumnDef="title">
-        <th mat-header-cell *matHeaderCellDef>Title</th>
-        <td mat-cell *matCellDef="let row">{{ row.title }}</td>
-      </ng-container>
-      <ng-container matColumnDef="description">
-        <th mat-header-cell *matHeaderCellDef>Description</th>
-        <td mat-cell *matCellDef="let row">{{ row.description || '—' }}</td>
-      </ng-container>
-      <ng-container matColumnDef="department">
-        <th mat-header-cell *matHeaderCellDef>Department</th>
-        <td mat-cell *matCellDef="let row">{{ row.department || '—' }}</td>
-      </ng-container>
-      <ng-container matColumnDef="location">
-        <th mat-header-cell *matHeaderCellDef>Location</th>
-        <td mat-cell *matCellDef="let row">{{ row.location || '—' }}</td>
-      </ng-container>
-      <ng-container matColumnDef="status">
-        <th mat-header-cell *matHeaderCellDef>Status</th>
-        <td mat-cell *matCellDef="let row">
-          <span class="status-badge" [class.closed]="row.status === 'Closed'">{{ row.status }}</span>
-        </td>
-      </ng-container>
-      <ng-container matColumnDef="actions">
-        <th mat-header-cell *matHeaderCellDef></th>
-        <td mat-cell *matCellDef="let row">
-          <a mat-button color="primary" [routerLink]="['/jobs', row.id, 'candidates']">
-            View Candidates
-          </a>
-        </td>
-      </ng-container>
-      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-      <tr class="mat-row no-data" *matNoDataRow>
-        <td class="mat-cell" [attr.colspan]="displayedColumns.length">No jobs yet.</td>
-      </tr>
-    </table>
+  <div class="stats-row" aria-label="Job stats">
+    <div class="stat-card" data-cy="jobs-stat-total">
+      <div class="stat-label">Total</div>
+      <div class="stat-value" data-cy="jobs-stat-total-value">{{ totalJobs }}</div>
+    </div>
+    <div class="stat-card" data-cy="jobs-stat-open">
+      <div class="stat-label">Open</div>
+      <div class="stat-value open" data-cy="jobs-stat-open-value">{{ openJobs }}</div>
+    </div>
+    <div class="stat-card" data-cy="jobs-stat-closed">
+      <div class="stat-label">Closed</div>
+      <div class="stat-value closed" data-cy="jobs-stat-closed-value">{{ closedJobs }}</div>
+    </div>
   </div>
+
+  <div class="toolbar">
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-label>Search jobs</mat-label>
+      <input
+        matInput
+        data-cy="jobs-search-input"
+        [(ngModel)]="searchQuery"
+        (ngModelChange)="onSearchChange()"
+        placeholder="Title, description, department..."
+      />
+      <mat-icon matPrefix>search</mat-icon>
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="status-field">
+      <mat-label>Status</mat-label>
+      <mat-select
+        data-cy="jobs-status-select"
+        [(ngModel)]="statusFilter"
+        (ngModelChange)="onStatusFilterChange()"
+      >
+        <mat-option value="all">All</mat-option>
+        <mat-option value="Open">Open</mat-option>
+        <mat-option value="Closed">Closed</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <button
+      mat-stroked-button
+      type="button"
+      class="clear-btn"
+      data-cy="jobs-clear-filters-btn"
+      (click)="clearFilters()"
+      [disabled]="!searchQuery && statusFilter === 'all'"
+    >
+      Clear
+    </button>
+  </div>
+
+  <mat-card class="table-card">
+    @if (loading()) {
+      <div class="loading-wrap">
+        <mat-spinner diameter="40"></mat-spinner>
+        <span>Loading jobs…</span>
+      </div>
+    } @else if (emptyMessage) {
+      <div class="empty-state">
+        <mat-icon>{{ loadError() ? 'cloud_off' : 'work_off' }}</mat-icon>
+        <p class="empty-title">{{ loadError() ? 'Could not load jobs' : 'No jobs to show' }}</p>
+        <p class="empty-desc">{{ emptyMessage }}</p>
+        @if (loadError()) {
+          <button mat-stroked-button type="button" (click)="loadFromApi()">Retry</button>
+        }
+      </div>
+    } @else {
+      <div class="table-wrap">
+        <table mat-table [dataSource]="dataSource" class="jobs-table" matSort>
+          <ng-container matColumnDef="title">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Title</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="cell-title">{{ row.title }}</span>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="description">
+            <th mat-header-cell *matHeaderCellDef>Description</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="cell-desc">{{ row.description || '—' }}</span>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="department">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Department</th>
+            <td mat-cell *matCellDef="let row">{{ row.department || '—' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="location">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Location</th>
+            <td mat-cell *matCellDef="let row">{{ row.location || '—' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="status-badge" [class.closed]="row.status === 'Closed'">{{ row.status }}</span>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="candidates">
+            <th mat-header-cell *matHeaderCellDef>Candidates</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="candidate-count">
+                <mat-icon>group</mat-icon>
+                <span>{{ getCandidateCount(row) }}</span>
+              </div>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let row">
+              <button mat-icon-button [matMenuTriggerFor]="jobMenu" aria-label="Job actions">
+                <mat-icon>more_horiz</mat-icon>
+              </button>
+              <mat-menu #jobMenu="matMenu">
+                <button mat-menu-item [routerLink]="['/jobs', row.id, 'candidates']">
+                  <mat-icon>group</mat-icon>
+                  <span>View candidates</span>
+                </button>
+                <button mat-menu-item type="button" (click)="editJob(row)">
+                  <mat-icon>edit</mat-icon>
+                  <span>Edit job</span>
+                </button>
+                <button mat-menu-item type="button" (click)="toggleJobStatus(row)">
+                  <mat-icon>{{ row.status === 'Open' ? 'cancel' : 'check_circle' }}</mat-icon>
+                  <span>{{ row.status === 'Open' ? 'Close job' : 'Reopen job' }}</span>
+                </button>
+              </mat-menu>
+            </td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+        </table>
+      </div>
+      <mat-paginator
+        class="jobs-paginator"
+        [pageSize]="10"
+        [pageSizeOptions]="[5, 10, 20]"
+        showFirstLastButtons
+      ></mat-paginator>
+    }
+  </mat-card>
 </div>
