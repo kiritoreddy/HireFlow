@@ -1,4 +1,4 @@
-# HireFlow — Sprint 2 Deliverable
+# HireFlow — Sprint 2
 
 ## Overview
 Sprint 2 focused on integrating backend and frontend functionality, expanding candidate and job workflows, adding automated testing, and documenting backend APIs. This sprint builds on Sprint 1 by delivering core system features and improving system reliability.
