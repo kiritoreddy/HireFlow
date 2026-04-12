@@ -27,6 +27,6 @@ describe('Login page', () => {
     cy.get('input[name="password"]').type('any-password');
     cy.contains('button.submit-btn', 'Sign in').click();
     cy.wait('@loginPost');
-    cy.location('pathname').should('eq', '/');
+    cy.location('pathname').should('eq', '/dashboard');
   });
 });
