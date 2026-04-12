@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"backend/middleware"
 	"backend/models"
 
 	"github.com/gorilla/mux"
@@ -35,6 +36,15 @@ type applicationListItem struct {
 
 type stageUpdateRequest struct {
 	Stage string `json:"stage"`
+}
+
+type myApplicationListItem struct {
+	ID         string `json:"id"`
+	JobID      uint   `json:"job_id"`
+	JobTitle   string `json:"job_title"`
+	Department string `json:"department,omitempty"`
+	Stage      string `json:"stage"`
+	RawStage   string `json:"raw_status,omitempty"`
 }
 
 var allowedStages = map[string]bool{
@@ -83,6 +93,23 @@ func statusToUIStage(status string) string {
 	}
 }
 
+func statusToCandidatePortalStage(status string) string {
+	switch strings.ToUpper(strings.TrimSpace(status)) {
+	case "APPLIED":
+		return "Applied"
+	case "INTERVIEW":
+		return "Interview"
+	case "SELECTED":
+		return "Selected"
+	case "REJECTED":
+		return "Rejected"
+	case "WITHDRAWN":
+		return "Withdrawn"
+	default:
+		return "Applied"
+	}
+}
+
 // ApplyWithCandidate creates or reuses a candidate by email and adds an application (APPLIED).
 func (h *CandidateHandler) ApplyWithCandidate(w http.ResponseWriter, r *http.Request) {
 	var req applyWithCandidateRequest
@@ -97,6 +124,14 @@ func (h *CandidateHandler) ApplyWithCandidate(w http.ResponseWriter, r *http.Req
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{"error": "job_id, name, and email are required"})
 		return
+	}
+	if claims, ok := middleware.JWTClaimsFromRequest(r); ok && claims != nil && claims.Role == "candidate" {
+		if strings.ToLower(strings.TrimSpace(req.Email)) != strings.ToLower(strings.TrimSpace(claims.Email)) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusForbidden)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Cannot apply with a different email than your account"})
+			return
+		}
 	}
 	var job models.Job
 	if err := h.DB.First(&job, req.JobID).Error; err != nil {
@@ -239,18 +274,116 @@ func (h *CandidateHandler) GetApplications(w http.ResponseWriter, r *http.Reques
 	json.NewEncoder(w).Encode(applications)
 }
 
-// WithdrawApplication marks an application as withdrawn.
+// ListMyApplications returns the logged-in candidate's applications with job titles.
+func (h *CandidateHandler) ListMyApplications(w http.ResponseWriter, r *http.Request) {
+	claims, ok := middleware.JWTClaimsFromRequest(r)
+	if !ok || claims == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Unauthorized"})
+		return
+	}
+	email := strings.ToLower(strings.TrimSpace(claims.Email))
+	var cand models.Candidate
+	if err := h.DB.Where("LOWER(email) = ?", email).First(&cand).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode([]myApplicationListItem{})
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to look up candidate"})
+		return
+	}
+	var apps []models.Application
+	if err := h.DB.Preload("Job").Where("candidate_id = ?", cand.ID).Order("id desc").Find(&apps).Error; err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to list applications"})
+		return
+	}
+	out := make([]myApplicationListItem, 0, len(apps))
+	for _, a := range apps {
+		title := ""
+		dept := ""
+		if a.Job.ID != 0 {
+			title = a.Job.Title
+			dept = a.Job.Department
+		}
+		out = append(out, myApplicationListItem{
+			ID:         strconv.FormatUint(uint64(a.ID), 10),
+			JobID:      a.JobID,
+			JobTitle:   title,
+			Department: dept,
+			Stage:      statusToCandidatePortalStage(a.Status),
+			RawStage:   a.Status,
+		})
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(out)
+}
+
+// WithdrawApplication marks an application as withdrawn (candidate only; must own the application).
 func (h *CandidateHandler) WithdrawApplication(w http.ResponseWriter, r *http.Request) {
+	claims, ok := middleware.JWTClaimsFromRequest(r)
+	if !ok || claims == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Unauthorized"})
+		return
+	}
 	params := mux.Vars(r)
 	id := params["id"]
-	appID, _ := strconv.Atoi(id)
+	appID, err := strconv.ParseUint(id, 10, 32)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid application ID"})
+		return
+	}
+	email := strings.ToLower(strings.TrimSpace(claims.Email))
+	var cand models.Candidate
+	if err := h.DB.Where("LOWER(email) = ?", email).First(&cand).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Candidate profile not found"})
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to look up candidate"})
+		return
+	}
 	var application models.Application
-	if err := h.DB.First(&application, appID).Error; err != nil {
-		http.Error(w, "Application not found", http.StatusNotFound)
+	if err := h.DB.First(&application, uint(appID)).Error; err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Application not found"})
+		return
+	}
+	if application.CandidateID != cand.ID {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Not allowed to withdraw this application"})
+		return
+	}
+	st := strings.ToUpper(strings.TrimSpace(application.Status))
+	if st == "WITHDRAWN" || st == "SELECTED" || st == "REJECTED" {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Application cannot be withdrawn"})
 		return
 	}
 	application.Status = "WITHDRAWN"
-	h.DB.Save(&application)
+	if err := h.DB.Save(&application).Error; err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to withdraw application"})
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(application)
 }

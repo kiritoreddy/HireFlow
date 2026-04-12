@@ -49,7 +49,8 @@ func SetupRoutes(db *gorm.DB) http.Handler {
 	router.HandleFunc("/api/candidate/jobs/{jobId}/applications", middleware.RequireAuth(candidateHandler.ListApplicationsByJob)).Methods("GET")
 	router.HandleFunc("/api/candidate/applications/{id}/stage", middleware.RequireAuth(candidateHandler.UpdateApplicationStage)).Methods("PATCH")
 	router.HandleFunc("/api/candidate/applications", candidateHandler.GetApplications).Methods("GET")
-	router.HandleFunc("/api/candidate/applications/{id}/withdraw", candidateHandler.WithdrawApplication).Methods("PATCH")
+	router.HandleFunc("/api/candidate/me/applications", middleware.RequireAuth(middleware.RequireRole("candidate")(candidateHandler.ListMyApplications))).Methods("GET")
+	router.HandleFunc("/api/candidate/applications/{id}/withdraw", middleware.RequireAuth(middleware.RequireRole("candidate")(candidateHandler.WithdrawApplication))).Methods("PATCH")
 
 	// Apply CORS middleware
 	corsHandler := middleware.SetupCORS()

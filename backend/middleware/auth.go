@@ -14,6 +14,12 @@ type contextKey string
 
 const claimsKey contextKey = "jwt_claims"
 
+// JWTClaimsFromRequest returns JWT claims when RequireAuth has run; otherwise false.
+func JWTClaimsFromRequest(r *http.Request) (*utils.JWTClaims, bool) {
+	claims, ok := r.Context().Value(claimsKey).(*utils.JWTClaims)
+	return claims, ok && claims != nil
+}
+
 // RequireAuth validates the JWT from Authorization: Bearer <token> and calls next with claims in context.
 // Returns 401 if missing or invalid token.
 func RequireAuth(next http.HandlerFunc) http.HandlerFunc {
