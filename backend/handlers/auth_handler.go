@@ -28,7 +28,9 @@ type RegisterRequest struct {
 	Name     string `json:"name"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
-	Role     string `json:"role"` // admin, hiring_manager, interviewer, candidate
+	// Role is intentionally ignored - self-registration always creates candidate role
+	// Admins use POST /users to create other roles
+	Role string `json:"role,omitempty"`
 }
 
 // LoginRequest represents the login request body
@@ -128,19 +130,9 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Set default role if not provided
-	if req.Role == "" {
-		req.Role = "candidate"
-	}
-
-	// Validate role
-	validRoles := map[string]bool{"admin": true, "hiring_manager": true, "interviewer": true, "candidate": true}
-	if !validRoles[req.Role] {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid role"})
-		return
-	}
+	// Self-registration always creates candidate role
+	// Only admins can create other roles via POST /users
+	req.Role = "candidate"
 
 	// Create new user
 	user := models.User{
