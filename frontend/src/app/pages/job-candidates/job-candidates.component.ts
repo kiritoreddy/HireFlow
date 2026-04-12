@@ -11,6 +11,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatMenuModule } from '@angular/material/menu';
 import { AddCandidateDialogComponent } from './add-candidate-dialog.component';
 import { JobsApiService } from '../../core/services/jobs-api.service';
 import { CandidatesApiService } from '../../core/services/candidates-api.service';
@@ -35,6 +36,7 @@ type CandidateFilter = 'All' | CandidateStage;
     MatInputModule,
     MatSnackBarModule,
     MatProgressSpinnerModule,
+    MatMenuModule,
   ],
   templateUrl: './job-candidates.component.html',
   styleUrl: './job-candidates.component.scss',
@@ -52,7 +54,7 @@ export class JobCandidatesComponent implements OnInit {
   searchTerm = '';
   selectedStageFilter: CandidateFilter = 'All';
 
-  displayedColumns = ['name', 'email', 'stage', 'resume', 'updated'];
+  displayedColumns = ['name', 'email', 'stage', 'resume', 'updated', 'actions'];
   dataSource = new MatTableDataSource<JobCandidate>([]);
   allCandidates: JobCandidate[] = [];
 
@@ -156,8 +158,26 @@ export class JobCandidatesComponent implements OnInit {
 
   onStageChange(candidate: JobCandidate, newStage: CandidateStage): void {
     this.candidatesApi.updateStage(candidate.id, newStage).subscribe({
-      next: () => this.refresh(),
+      next: () => {
+        this.snackBar.open(`Stage updated to ${newStage}.`, 'Close', { duration: 2000 });
+        this.refresh();
+      },
       error: () => this.snackBar.open('Failed to update stage.', 'Close', { duration: 4000 }),
+    });
+  }
+
+  deleteCandidate(candidate: JobCandidate): void {
+    const confirmed = confirm(
+      `Remove "${candidate.name}" from this job?\n\nThis action cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    this.candidatesApi.deleteApplication(candidate.id).subscribe({
+      next: () => {
+        this.snackBar.open('Candidate removed.', 'Close', { duration: 2500 });
+        this.refresh();
+      },
+      error: () => this.snackBar.open('Failed to remove candidate.', 'Close', { duration: 4000 }),
     });
   }
 }

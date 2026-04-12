@@ -46,4 +46,10 @@ export class CandidatesApiService {
       .patch(CANDIDATE_ENDPOINTS.stage(applicationId), { stage })
       .pipe(map(() => undefined));
   }
+
+  deleteApplication(applicationId: string): Observable<void> {
+    return this.http
+      .delete(CANDIDATE_ENDPOINTS.delete(applicationId))
+      .pipe(map(() => undefined));
+  }
 }

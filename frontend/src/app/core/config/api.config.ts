@@ -23,4 +23,5 @@ export const CANDIDATE_ENDPOINTS = {
   apply: `${API_BASE_URL}/api/candidate/apply`,
   byJob: (jobId: number) => `${API_BASE_URL}/api/candidate/jobs/${jobId}/applications`,
   stage: (applicationId: string) => `${API_BASE_URL}/api/candidate/applications/${applicationId}/stage`,
+  delete: (applicationId: string) => `${API_BASE_URL}/api/candidate/applications/${applicationId}`,
 } as const;

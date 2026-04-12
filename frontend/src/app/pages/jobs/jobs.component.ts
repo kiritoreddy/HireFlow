@@ -29,6 +29,7 @@ type StatusFilter = 'all' | 'Open' | 'Closed';
     FormsModule,
     RouterModule,
     MatTableModule,
+    MatSortModule,
     MatButtonModule,
     MatCardModule,
     MatIconModule,
@@ -36,7 +37,6 @@ type StatusFilter = 'all' | 'Open' | 'Closed';
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
-    MatSortModule,
     MatPaginatorModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
@@ -79,7 +79,6 @@ export class JobsComponent implements OnInit, AfterViewInit {
   loading = signal(false);
   loadError = signal(false);
 
-  /** Last successful fetch (source for local filters). */
   private allJobs: Job[] = [];
 
   get totalJobs(): number {
@@ -157,23 +156,19 @@ export class JobsComponent implements OnInit, AfterViewInit {
     if (this.paginator) this.paginator.firstPage();
   }
 
-  refresh(): void {
+  onSearchChange(): void {
     this.applyLocalFilters();
   }
 
-  onSearchChange(): void {
-    this.refresh();
-  }
-
   onStatusFilterChange(): void {
-    this.refresh();
+    this.applyLocalFilters();
   }
 
   clearFilters(): void {
     if (!this.searchQuery && this.statusFilter === 'all') return;
     this.searchQuery = '';
     this.statusFilter = 'all';
-    this.refresh();
+    this.applyLocalFilters();
   }
 
   getCandidateCount(job: Job): number {
@@ -187,7 +182,9 @@ export class JobsComponent implements OnInit, AfterViewInit {
 
   private apiError(err: unknown, fallback: string): void {
     const e = err as { error?: { error?: string }; status?: number };
-    const msg = e?.error?.error ?? (e?.status === 403 ? 'You do not have permission for this action.' : fallback);
+    const msg =
+      e?.error?.error ??
+      (e?.status === 403 ? 'You do not have permission for this action.' : fallback);
     this.snackBar.open(msg, 'Close', { duration: 4000 });
   }
 
@@ -221,18 +218,13 @@ export class JobsComponent implements OnInit, AfterViewInit {
 
     ref.afterClosed().subscribe((value?: JobFormValue) => {
       if (!value) return;
-      this.jobsApi
-        .updateJob({
-          ...job,
-          ...value,
-        })
-        .subscribe({
-          next: () => {
-            this.snackBar.open('Job updated successfully.', 'Close', { duration: 2500 });
-            this.loadFromApi();
-          },
-          error: (err) => this.apiError(err, 'Failed to update job'),
-        });
+      this.jobsApi.updateJob({ ...job, ...value }).subscribe({
+        next: () => {
+          this.snackBar.open('Job updated successfully.', 'Close', { duration: 2500 });
+          this.loadFromApi();
+        },
+        error: (err) => this.apiError(err, 'Failed to update job'),
+      });
     });
   }
 
@@ -244,6 +236,21 @@ export class JobsComponent implements OnInit, AfterViewInit {
         this.loadFromApi();
       },
       error: (err) => this.apiError(err, 'Failed to update job status'),
+    });
+  }
+
+  deleteJob(job: Job): void {
+    const confirmed = confirm(
+      `Delete "${job.title}"?\n\nThis will also remove all candidates linked to this job.`
+    );
+    if (!confirmed) return;
+
+    this.jobsApi.deleteJob(job.id).subscribe({
+      next: () => {
+        this.snackBar.open('Job deleted.', 'Close', { duration: 2500 });
+        this.loadFromApi();
+      },
+      error: (err) => this.apiError(err, 'Failed to delete job'),
     });
   }
 }

@@ -1,12 +1,21 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { JobsApiService } from '../../core/services/jobs-api.service';
+import { Job } from '../../core/models/job.model';
+
+interface DepartmentSummary {
+  department: string;
+  openCount: number;
+  closedCount: number;
+}
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [RouterLink, MatButtonModule, MatIconModule],
+  imports: [CommonModule, RouterLink, MatButtonModule, MatIconModule],
   template: `
     <div class="dashboard-page">
       <p class="eyebrow">OVERVIEW</p>
@@ -22,7 +31,7 @@ import { MatIconModule } from '@angular/material/icon';
           </div>
           <div class="stat-copy">
             <div class="stat-label">Total Jobs</div>
-            <div class="stat-value">3</div>
+            <div class="stat-value">{{ totalJobs }}</div>
             <div class="stat-subtext">Across all departments</div>
           </div>
         </div>
@@ -33,7 +42,7 @@ import { MatIconModule } from '@angular/material/icon';
           </div>
           <div class="stat-copy">
             <div class="stat-label">Open Jobs</div>
-            <div class="stat-value">2</div>
+            <div class="stat-value">{{ openJobs }}</div>
             <div class="stat-subtext">Currently accepting candidates</div>
           </div>
         </div>
@@ -44,19 +53,19 @@ import { MatIconModule } from '@angular/material/icon';
           </div>
           <div class="stat-copy">
             <div class="stat-label">Candidates</div>
-            <div class="stat-value">2</div>
+            <div class="stat-value">{{ totalCandidates }}</div>
             <div class="stat-subtext">Tracked in the pipeline</div>
           </div>
         </div>
 
         <div class="stat-card">
-          <div class="stat-icon users">
-            <mat-icon>group</mat-icon>
+          <div class="stat-icon closed">
+            <mat-icon>cancel</mat-icon>
           </div>
           <div class="stat-copy">
-            <div class="stat-label">Users</div>
-            <div class="stat-value">5</div>
-            <div class="stat-subtext">Internal system users</div>
+            <div class="stat-label">Closed Jobs</div>
+            <div class="stat-value">{{ closedJobs }}</div>
+            <div class="stat-subtext">No longer accepting applicants</div>
           </div>
         </div>
       </section>
@@ -86,25 +95,32 @@ import { MatIconModule } from '@angular/material/icon';
 
         <div class="panel hiring-summary">
           <h2>Hiring Summary</h2>
-          <p>Current snapshot of your hiring workflow.</p>
+          <p>Current snapshot by department.</p>
 
           <div class="summary-list">
-            <div class="summary-row">
-              <span>Engineering</span>
-              <span>1 active role</span>
-            </div>
-            <div class="summary-row">
-              <span>Design</span>
-              <span>1 active role</span>
-            </div>
-            <div class="summary-row">
-              <span>Analytics</span>
-              <span>1 closed role</span>
-            </div>
-            <div class="summary-row latest">
-              <span>Latest update</span>
-              <span>Candidates page styled and wired locally</span>
-            </div>
+            @if (loading()) {
+              <div class="summary-row">
+                <span>Loading…</span>
+              </div>
+            } @else {
+              @for (dept of departmentSummary; track dept.department) {
+                <div class="summary-row">
+                  <span>{{ dept.department }}</span>
+                  <span>
+                    {{ dept.openCount }} open
+                    @if (dept.closedCount > 0) {
+                      · {{ dept.closedCount }} closed
+                    }
+                  </span>
+                </div>
+              }
+              @if (departmentSummary.length === 0) {
+                <div class="summary-row">
+                  <span>No jobs yet</span>
+                  <span>—</span>
+                </div>
+              }
+            }
           </div>
         </div>
       </section>
@@ -178,29 +194,12 @@ import { MatIconModule } from '@angular/material/icon';
         height: 26px;
       }
 
-      .stat-icon.jobs {
-        background: #dbe7ff;
-        color: #315fcb;
-      }
+      .stat-icon.jobs { background: #dbe7ff; color: #315fcb; }
+      .stat-icon.open { background: #dff3e4; color: #3b9c52; }
+      .stat-icon.candidates { background: #ece6ff; color: #7c3aed; }
+      .stat-icon.closed { background: #fdecea; color: #d32f2f; }
 
-      .stat-icon.open {
-        background: #dff3e4;
-        color: #3b9c52;
-      }
-
-      .stat-icon.candidates {
-        background: #ece6ff;
-        color: #7c3aed;
-      }
-
-      .stat-icon.users {
-        background: #f7e7cf;
-        color: #dd6b20;
-      }
-
-      .stat-copy {
-        min-width: 0;
-      }
+      .stat-copy { min-width: 0; }
 
       .stat-label {
         color: #667085;
@@ -267,10 +266,7 @@ import { MatIconModule } from '@angular/material/icon';
         transition: all 0.18s ease;
       }
 
-      .action-btn mat-icon {
-        color: #667085 !important;
-        transition: color 0.18s ease;
-      }
+      .action-btn mat-icon { color: #667085 !important; }
 
       .action-btn:hover {
         background: #f8fafc !important;
@@ -280,14 +276,11 @@ import { MatIconModule } from '@angular/material/icon';
         box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
       }
 
-      .action-btn:hover mat-icon {
-        color: #1d4ed8 !important;
-      }
+      .action-btn:hover mat-icon { color: #1d4ed8 !important; }
 
       .summary-list {
         display: flex;
         flex-direction: column;
-        gap: 0;
       }
 
       .summary-row {
@@ -305,47 +298,71 @@ import { MatIconModule } from '@angular/material/icon';
         padding-top: 0;
       }
 
-      .summary-row span:first-child {
-        font-weight: 700;
-      }
-
-      .summary-row span:last-child {
-        color: #667085;
-      }
-
-      .summary-row.latest span:last-child {
-        max-width: 280px;
-        text-align: right;
-      }
+      .summary-row span:first-child { font-weight: 700; }
+      .summary-row span:last-child { color: #667085; }
 
       @media (max-width: 1200px) {
-        .stats-grid {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-
-        .content-grid {
-          grid-template-columns: 1fr;
-        }
+        .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .content-grid { grid-template-columns: 1fr; }
       }
 
       @media (max-width: 768px) {
-        .dashboard-page {
-          padding: 4px 0 16px;
-        }
-
-        .page-title {
-          font-size: 28px;
-        }
-
-        .stats-grid {
-          grid-template-columns: 1fr;
-        }
-
-        .panel {
-          padding: 20px;
-        }
+        .dashboard-page { padding: 4px 0 16px; }
+        .page-title { font-size: 28px; }
+        .stats-grid { grid-template-columns: 1fr; }
+        .panel { padding: 20px; }
       }
     `,
   ],
 })
-export class DashboardComponent {}
+export class DashboardComponent implements OnInit {
+  private jobsApi = inject(JobsApiService);
+
+  totalJobs = 0;
+  openJobs = 0;
+  closedJobs = 0;
+  totalCandidates = 0;
+  departmentSummary: DepartmentSummary[] = [];
+  loading = signal(true);
+
+  ngOnInit(): void {
+    this.refresh();
+  }
+
+  refresh(): void {
+    this.loading.set(true);
+    this.jobsApi.getJobs().subscribe({
+      next: (jobs: Job[]) => {
+        this.totalJobs = jobs.length;
+        this.openJobs = jobs.filter((j) => j.status === 'Open').length;
+        this.closedJobs = jobs.filter((j) => j.status === 'Closed').length;
+
+        this.totalCandidates = jobs.reduce((sum, j) => {
+          const count =
+            j.candidateCount ??
+            (j.appliedCount ?? 0) +
+              (j.interviewCount ?? 0) +
+              (j.selectedCount ?? 0) +
+              (j.rejectedCount ?? 0);
+          return sum + count;
+        }, 0);
+
+        const deptMap = new Map<string, DepartmentSummary>();
+        for (const job of jobs) {
+          const dept = job.department || 'General';
+          if (!deptMap.has(dept)) {
+            deptMap.set(dept, { department: dept, openCount: 0, closedCount: 0 });
+          }
+          const entry = deptMap.get(dept)!;
+          if (job.status === 'Open') entry.openCount++;
+          else entry.closedCount++;
+        }
+        this.departmentSummary = Array.from(deptMap.values());
+        this.loading.set(false);
+      },
+      error: () => {
+        this.loading.set(false);
+      },
+    });
+  }
+}

@@ -122,15 +122,18 @@
   border-color: #e5e7eb !important;
 }
 
-.page-title {
-  margin: 0;
-  font-size: 1.75rem;
-}
-
 .loading-wrap {
   min-height: 180px;
   display: grid;
   place-items: center;
+}
+
+.loading-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 2rem 0;
+  color: #667085;
 }
 
 .table-wrap {
@@ -202,10 +205,56 @@
   padding: 28px;
 }
 
-.loading-row {
-  display: flex;
+.candidate-name {
+  font-weight: 600;
+  color: #111827;
+}
+
+.email-link {
+  color: #2563eb;
+  text-decoration: none;
+  font-size: 14px;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.stage-badge {
+  display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 2rem 0;
-  color: #667085;
+  justify-content: center;
+  height: 26px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+
+  &.stage-applied {
+    background: #dbeafe;
+    color: #1d4ed8;
+  }
+
+  &.stage-interview {
+    background: #fef9c3;
+    color: #a16207;
+  }
+
+  &.stage-selected {
+    background: #dcfce7;
+    color: #16a34a;
+  }
+
+  &.stage-rejected {
+    background: #fee2e2;
+    color: #dc2626;
+  }
+}
+
+.delete-item {
+  color: #d32f2f !important;
+
+  mat-icon {
+    color: #d32f2f !important;
+  }
 }

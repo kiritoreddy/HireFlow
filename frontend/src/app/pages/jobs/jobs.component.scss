@@ -228,6 +228,7 @@
   padding: 2rem;
 }
 
+
 @media (max-width: 600px) {
   .stats-row {
     grid-template-columns: 1fr;
@@ -238,5 +239,30 @@
   .search-field {
     max-width: none;
     width: 100%;
+  }
+}
+.active-filter {
+  font-weight: 700;
+}
+
+.delete-item {
+  color: #d32f2f !important;
+
+  mat-icon {
+    color: #d32f2f !important;
+  }
+}
+
+.candidate-count {
+  text-decoration: none;
+  cursor: pointer;
+
+  &:hover span {
+    text-decoration: underline;
+    color: #1d4ed8;
+  }
+
+  &:hover mat-icon {
+    color: #1d4ed8;
   }
 }
