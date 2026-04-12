@@ -1,6 +1,6 @@
 <div class="app-layout">
   <header class="app-header">
-    <a mat-button routerLink="/" class="app-logo">
+    <a mat-button [routerLink]="isCandidate ? '/portal/jobs' : '/dashboard'" class="app-logo">
       <span class="logo-text">
         <span class="logo-hire">Hire</span><span class="logo-flow">Flow</span>
       </span>
@@ -49,18 +49,37 @@
   <div class="app-body">
     <nav class="app-sidebar">
       <div class="nav-group">
-        <a
-          mat-button
-          routerLink="/"
-          routerLinkActive="active"
-          [routerLinkActiveOptions]="{ exact: true }"
-          class="nav-link"
-        >
-          <mat-icon>dashboard</mat-icon>
-          <span>Dashboard</span>
-        </a>
+        @if (isCandidate) {
+          <a
+            mat-button
+            routerLink="/portal/jobs"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: true }"
+            class="nav-link"
+          >
+            <mat-icon>work</mat-icon>
+            <span>Open roles</span>
+          </a>
+          <a
+            mat-button
+            routerLink="/portal/applications"
+            routerLinkActive="active"
+            class="nav-link"
+          >
+            <mat-icon>assignment</mat-icon>
+            <span>My applications</span>
+          </a>
+        } @else {
+          <a
+            mat-button
+            routerLink="/dashboard"
+            routerLinkActive="active"
+            class="nav-link"
+          >
+            <mat-icon>dashboard</mat-icon>
+            <span>Dashboard</span>
+          </a>
 
-        @if (!isCandidate) {
           <a
             mat-button
             routerLink="/candidates"
@@ -80,18 +99,18 @@
             <mat-icon>work</mat-icon>
             <span>Jobs</span>
           </a>
-        }
 
-        @if (isAdmin) {
-          <a
-            mat-button
-            routerLink="/users"
-            routerLinkActive="active"
-            class="nav-link"
-          >
-            <mat-icon>group</mat-icon>
-            <span>Users</span>
-          </a>
+          @if (isAdmin) {
+            <a
+              mat-button
+              routerLink="/users"
+              routerLinkActive="active"
+              class="nav-link"
+            >
+              <mat-icon>group</mat-icon>
+              <span>Users</span>
+            </a>
+          }
         }
       </div>
 
