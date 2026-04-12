@@ -1,4 +1,4 @@
-/** Candidate application for a job. Swap static data for API later. */
+/** Candidate application row (hiring pipeline / job detail). */
 export type CandidateStage = 'Applied' | 'Interview' | 'Selected' | 'Rejected';
 
 export interface JobCandidate {

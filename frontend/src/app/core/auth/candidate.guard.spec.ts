@@ -1,11 +1,10 @@
 import { TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
-import { provideRouter } from '@angular/router';
-import { hiringOnlyGuard } from './candidate.guard';
+import { Router, UrlTree, provideRouter } from '@angular/router';
+import { hiringOnlyGuard, candidateGuard } from './candidate.guard';
 import { AuthService } from './auth.service';
 import { vi } from 'vitest';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
-import { computed, signal } from '@angular/core';
+import { computed } from '@angular/core';
 
 const makeAuth = (loggedIn: boolean, role: string) => ({
   isLoggedIn: computed(() => loggedIn),
@@ -47,5 +46,34 @@ describe('hiringOnlyGuard', () => {
   it('should redirect unauthenticated users to /login', () => {
     const result = runGuard(false, '');
     expect(result).not.toBe(true);
+  });
+});
+
+describe('candidateGuard', () => {
+  afterEach(() => TestBed.resetTestingModule());
+
+  it('allows candidates', () => {
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: AuthService, useValue: { getCurrentUser: () => ({ role: 'candidate' }) } },
+        { provide: Router, useValue: { createUrlTree: vi.fn() } },
+      ],
+    });
+    const result = TestBed.runInInjectionContext(() => candidateGuard(fakeRoute, fakeState));
+    expect(result).toBe(true);
+  });
+
+  it('redirects non-candidates to dashboard', () => {
+    const tree = {} as UrlTree;
+    const createUrlTree = vi.fn(() => tree);
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: AuthService, useValue: { getCurrentUser: () => ({ role: 'admin' }) } },
+        { provide: Router, useValue: { createUrlTree } },
+      ],
+    });
+    const result = TestBed.runInInjectionContext(() => candidateGuard(fakeRoute, fakeState));
+    expect(createUrlTree).toHaveBeenCalledWith(['/dashboard']);
+    expect(result).toBe(tree);
   });
 });

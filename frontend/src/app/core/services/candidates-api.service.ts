@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { CANDIDATE_ENDPOINTS } from '../config/api.config';
 import { CandidateStage, JobCandidate } from '../models/candidate.model';
+import { MyApplication } from '../models/my-application.model';
 
 interface BackendApplicationRow {
   id: string;
@@ -11,6 +12,16 @@ interface BackendApplicationRow {
   email: string;
   resume: string;
   stage: string;
+}
+
+interface BackendMyApplicationRow {
+  id: string;
+  job_id: number;
+  job_title: string;
+  department?: string;
+  stage: string;
+  raw_status?: string;
+  applied_at?: string;
 }
 
 function mapRow(r: BackendApplicationRow): JobCandidate {
@@ -51,5 +62,25 @@ export class CandidatesApiService {
     return this.http
       .delete(CANDIDATE_ENDPOINTS.delete(applicationId))
       .pipe(map(() => undefined));
+  }
+
+  listMyApplications(): Observable<MyApplication[]> {
+    return this.http.get<BackendMyApplicationRow[]>(CANDIDATE_ENDPOINTS.myApplications).pipe(
+      map((rows) =>
+        rows.map((r) => ({
+          id: r.id,
+          jobId: r.job_id,
+          jobTitle: r.job_title || '—',
+          department: r.department,
+          stage: r.stage,
+          rawStatus: r.raw_status,
+          appliedAt: r.applied_at,
+        }))
+      )
+    );
+  }
+
+  withdraw(applicationId: string): Observable<void> {
+    return this.http.patch(CANDIDATE_ENDPOINTS.withdraw(applicationId), {}).pipe(map(() => undefined));
   }
 }

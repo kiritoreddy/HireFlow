@@ -5,7 +5,7 @@ import { AuthService } from './auth.service';
 /**
  * Blocks candidate-role users from accessing hiring-only routes
  * (e.g. the internal candidates pipeline, job management).
- * Redirects them to the dashboard with an access-denied param.
+ * Redirects them home with an access-denied query param.
  */
 export const hiringOnlyGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
@@ -17,10 +17,20 @@ export const hiringOnlyGuard: CanActivateFn = () => {
 
   const role = auth.getCurrentUser()?.role ?? '';
 
-  // candidates are not allowed to see the hiring pipeline
   if (role === 'candidate') {
     return router.createUrlTree(['/'], { queryParams: { access: 'denied' } });
   }
 
   return true;
+};
+
+/** Only users with role `candidate` may activate the route. */
+export const candidateGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  const user = auth.getCurrentUser();
+  if (user?.role === 'candidate') {
+    return true;
+  }
+  return router.createUrlTree(['/dashboard']);
 };

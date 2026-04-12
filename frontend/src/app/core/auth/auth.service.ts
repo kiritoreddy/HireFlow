@@ -39,6 +39,8 @@ interface ResetPasswordResponse {
 
 /** Current user profile (from backend or stored). */
 export interface CurrentUserProfile {
+  /** Present when user was loaded from a recent login response. */
+  id?: number;
   displayName: string;
   email: string;
   role: string;
@@ -61,7 +63,9 @@ export class AuthService {
     if (!raw) return null;
     try {
       const u = JSON.parse(raw);
+      const idNum = typeof u.id === 'number' ? u.id : Number(u.id);
       return {
+        ...(Number.isFinite(idNum) && idNum > 0 ? { id: idNum } : {}),
         displayName: u.name ?? '',
         email: u.email ?? '',
         role: u.role ?? '',
