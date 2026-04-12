@@ -19,6 +19,10 @@ export const JOBS_ENDPOINTS = {
   byId: (id: number) => `${API_BASE_URL}/jobs/${id}`,
 } as const;
 
+export const DASHBOARD_ENDPOINTS = {
+  stats: `${API_BASE_URL}/dashboard/stats`,
+} as const;
+
 export const CANDIDATE_ENDPOINTS = {
   apply: `${API_BASE_URL}/api/candidate/apply`,
   byJob: (jobId: number) => `${API_BASE_URL}/api/candidate/jobs/${jobId}/applications`,

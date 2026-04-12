@@ -3,14 +3,10 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { DashboardApiService, DashboardStats, DepartmentStat } from '../../core/services/dashboard-api.service';
 import { JobsApiService } from '../../core/services/jobs-api.service';
 import { Job } from '../../core/models/job.model';
-
-interface DepartmentSummary {
-  department: string;
-  openCount: number;
-  closedCount: number;
-}
+import { catchError, of } from 'rxjs';
 
 @Component({
   selector: 'app-dashboard',
@@ -66,6 +62,17 @@ interface DepartmentSummary {
             <div class="stat-label">Closed Jobs</div>
             <div class="stat-value">{{ closedJobs }}</div>
             <div class="stat-subtext">No longer accepting applicants</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon users">
+            <mat-icon>manage_accounts</mat-icon>
+          </div>
+          <div class="stat-copy">
+            <div class="stat-label">Total Users</div>
+            <div class="stat-value">{{ totalUsers }}</div>
+            <div class="stat-subtext">Registered in the system</div>
           </div>
         </div>
       </section>
@@ -163,7 +170,7 @@ interface DepartmentSummary {
 
       .stats-grid {
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(5, minmax(0, 1fr));
         gap: 20px;
         margin-bottom: 24px;
       }
@@ -194,10 +201,11 @@ interface DepartmentSummary {
         height: 26px;
       }
 
-      .stat-icon.jobs { background: #dbe7ff; color: #315fcb; }
-      .stat-icon.open { background: #dff3e4; color: #3b9c52; }
+      .stat-icon.jobs       { background: #dbe7ff; color: #315fcb; }
+      .stat-icon.open       { background: #dff3e4; color: #3b9c52; }
       .stat-icon.candidates { background: #ece6ff; color: #7c3aed; }
-      .stat-icon.closed { background: #fdecea; color: #d32f2f; }
+      .stat-icon.closed     { background: #fdecea; color: #d32f2f; }
+      .stat-icon.users      { background: #fff4e5; color: #d97706; }
 
       .stat-copy { min-width: 0; }
 
@@ -299,9 +307,13 @@ interface DepartmentSummary {
       }
 
       .summary-row span:first-child { font-weight: 700; }
-      .summary-row span:last-child { color: #667085; }
+      .summary-row span:last-child  { color: #667085; }
 
-      @media (max-width: 1200px) {
+      @media (max-width: 1400px) {
+        .stats-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      }
+
+      @media (max-width: 1000px) {
         .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .content-grid { grid-template-columns: 1fr; }
       }
@@ -316,13 +328,15 @@ interface DepartmentSummary {
   ],
 })
 export class DashboardComponent implements OnInit {
+  private dashboardApi = inject(DashboardApiService);
   private jobsApi = inject(JobsApiService);
 
   totalJobs = 0;
   openJobs = 0;
   closedJobs = 0;
   totalCandidates = 0;
-  departmentSummary: DepartmentSummary[] = [];
+  totalUsers = 0;
+  departmentSummary: DepartmentStat[] = [];
   loading = signal(true);
 
   ngOnInit(): void {
@@ -331,38 +345,46 @@ export class DashboardComponent implements OnInit {
 
   refresh(): void {
     this.loading.set(true);
-    this.jobsApi.getJobs().subscribe({
-      next: (jobs: Job[]) => {
-        this.totalJobs = jobs.length;
-        this.openJobs = jobs.filter((j) => j.status === 'Open').length;
-        this.closedJobs = jobs.filter((j) => j.status === 'Closed').length;
 
-        this.totalCandidates = jobs.reduce((sum, j) => {
-          const count =
-            j.candidateCount ??
-            (j.appliedCount ?? 0) +
-              (j.interviewCount ?? 0) +
-              (j.selectedCount ?? 0) +
-              (j.rejectedCount ?? 0);
-          return sum + count;
-        }, 0);
-
-        const deptMap = new Map<string, DepartmentSummary>();
-        for (const job of jobs) {
-          const dept = job.department || 'General';
-          if (!deptMap.has(dept)) {
-            deptMap.set(dept, { department: dept, openCount: 0, closedCount: 0 });
-          }
-          const entry = deptMap.get(dept)!;
-          if (job.status === 'Open') entry.openCount++;
-          else entry.closedCount++;
-        }
-        this.departmentSummary = Array.from(deptMap.values());
+    // Try the dedicated stats endpoint first; fall back to deriving from /jobs
+    this.dashboardApi.getStats().pipe(
+      catchError(() => of(null))
+    ).subscribe((stats) => {
+      if (stats) {
+        this.totalJobs = stats.totalJobs;
+        this.openJobs = stats.openJobs;
+        this.closedJobs = stats.closedJobs;
+        this.totalCandidates = stats.totalCandidates;
+        this.totalUsers = stats.totalUsers;
+        this.departmentSummary = stats.departmentSummary;
         this.loading.set(false);
-      },
-      error: () => {
-        this.loading.set(false);
-      },
+      } else {
+        // Fallback: derive from GET /jobs until backend endpoint is ready
+        this.jobsApi.getJobs().subscribe({
+          next: (jobs: Job[]) => {
+            this.totalJobs = jobs.length;
+            this.openJobs = jobs.filter((j) => j.status === 'Open').length;
+            this.closedJobs = jobs.filter((j) => j.status === 'Closed').length;
+            this.totalCandidates = jobs.reduce((sum, j) => {
+              return sum + (j.candidateCount ??
+                (j.appliedCount ?? 0) + (j.interviewCount ?? 0) +
+                (j.selectedCount ?? 0) + (j.rejectedCount ?? 0));
+            }, 0);
+            this.totalUsers = 0; // not available from jobs endpoint
+            const deptMap = new Map<string, DepartmentStat>();
+            for (const job of jobs) {
+              const dept = job.department || 'General';
+              if (!deptMap.has(dept)) deptMap.set(dept, { department: dept, openCount: 0, closedCount: 0 });
+              const entry = deptMap.get(dept)!;
+              if (job.status === 'Open') entry.openCount++;
+              else entry.closedCount++;
+            }
+            this.departmentSummary = Array.from(deptMap.values());
+            this.loading.set(false);
+          },
+          error: () => this.loading.set(false),
+        });
+      }
     });
   }
 }
