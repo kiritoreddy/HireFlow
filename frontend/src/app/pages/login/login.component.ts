@@ -60,4 +60,9 @@ export class LoginComponent implements OnInit {
       this.cdr.detectChanges(); // force immediate UI update
     });
   }
+
+  signInWithGoogle(): void {
+    // Google OAuth integration — redirects to backend OAuth flow when configured
+    this.error = 'Google Sign-In is not yet configured. Please sign in with email and password.';
+  }
 }

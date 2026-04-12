@@ -60,25 +60,27 @@
           <span>Dashboard</span>
         </a>
 
-        <a
-          mat-button
-          routerLink="/candidates"
-          routerLinkActive="active"
-          class="nav-link"
-        >
-          <mat-icon>groups</mat-icon>
-          <span>Candidates</span>
-        </a>
+        @if (!isCandidate) {
+          <a
+            mat-button
+            routerLink="/candidates"
+            routerLinkActive="active"
+            class="nav-link"
+          >
+            <mat-icon>groups</mat-icon>
+            <span>Candidates</span>
+          </a>
 
-        <a
-          mat-button
-          routerLink="/jobs"
-          routerLinkActive="active"
-          class="nav-link"
-        >
-          <mat-icon>work</mat-icon>
-          <span>Jobs</span>
-        </a>
+          <a
+            mat-button
+            routerLink="/jobs"
+            routerLinkActive="active"
+            class="nav-link"
+          >
+            <mat-icon>work</mat-icon>
+            <span>Jobs</span>
+          </a>
+        }
 
         @if (isAdmin) {
           <a

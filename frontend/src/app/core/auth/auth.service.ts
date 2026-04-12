@@ -93,6 +93,19 @@ export class AuthService {
     );
   }
 
+  /** Register a new candidate account. */
+  register(name: string, email: string, password: string) {
+    const body = { name, email, password, role: 'candidate' };
+    return this.http.post<AuthResponse>(AUTH_ENDPOINTS.register, body).pipe(
+      map(() => ({ success: true as const })),
+      catchError((err) => {
+        const msg =
+          err?.error?.error ?? (err?.status === 0 ? 'Cannot reach server. Is the backend running?' : 'Registration failed. Please try again.');
+        return of({ success: false as const, error: msg });
+      })
+    );
+  }
+
   /** Request password reset. Backend returns a demo reset token (no email sending yet). */
   requestPasswordReset(email: string) {
     const body = { email: email.trim() };

@@ -24,10 +24,13 @@ import { AuthService, CurrentUserProfile } from '../core/auth/auth.service';
 export class AppLayoutComponent {
   currentUser: CurrentUserProfile | null = null;
   isAdmin = false;
+  isCandidate = false;
 
   constructor(private auth: AuthService) {
     this.currentUser = this.auth.getCurrentUser();
-    this.isAdmin = (this.currentUser?.role ?? '') === 'admin';
+    const role = this.currentUser?.role ?? '';
+    this.isAdmin = role === 'admin';
+    this.isCandidate = role === 'candidate';
   }
 
   logout(): void {

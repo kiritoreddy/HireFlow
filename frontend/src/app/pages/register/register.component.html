@@ -1,0 +1,99 @@
+<div class="register-page">
+  <mat-card class="register-card">
+    <div class="login-brand">
+      <span class="brand-dark">Hire</span><span class="brand-accent">Flow</span>
+    </div>
+
+    <mat-card-header class="register-header">
+      <mat-card-title>Create an account</mat-card-title>
+      <p class="register-subtitle">Sign up as a candidate to apply for jobs.</p>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form (ngSubmit)="onSubmit()" class="register-form">
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Full Name</mat-label>
+          <input
+            matInput
+            [(ngModel)]="name"
+            name="name"
+            type="text"
+            required
+            autocomplete="name"
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Email</mat-label>
+          <input
+            matInput
+            [(ngModel)]="email"
+            name="email"
+            type="email"
+            required
+            autocomplete="email"
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Password</mat-label>
+          <input
+            matInput
+            [(ngModel)]="password"
+            name="password"
+            [type]="hidePassword ? 'password' : 'text'"
+            required
+            autocomplete="new-password"
+          />
+          <button mat-icon-button matSuffix type="button"
+            (click)="hidePassword = !hidePassword"
+            [attr.aria-label]="hidePassword ? 'Show password' : 'Hide password'">
+            <mat-icon>{{ hidePassword ? 'visibility' : 'visibility_off' }}</mat-icon>
+          </button>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Confirm Password</mat-label>
+          <input
+            matInput
+            [(ngModel)]="confirmPassword"
+            name="confirmPassword"
+            [type]="hideConfirm ? 'password' : 'text'"
+            required
+            autocomplete="new-password"
+          />
+          <button mat-icon-button matSuffix type="button"
+            (click)="hideConfirm = !hideConfirm"
+            [attr.aria-label]="hideConfirm ? 'Show password' : 'Hide password'">
+            <mat-icon>{{ hideConfirm ? 'visibility' : 'visibility_off' }}</mat-icon>
+          </button>
+        </mat-form-field>
+
+        @if (error) {
+          <p class="error">{{ error }}</p>
+        }
+
+        @if (success) {
+          <p class="success-msg">{{ success }}</p>
+        }
+
+        <button
+          mat-flat-button
+          color="primary"
+          type="submit"
+          class="submit-btn"
+          [disabled]="loading"
+        >
+          {{ loading ? 'Creating account…' : 'Create account' }}
+        </button>
+
+        <p class="signin-link">
+          Already have an account?
+          <a routerLink="/login">Sign in</a>
+        </p>
+
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>

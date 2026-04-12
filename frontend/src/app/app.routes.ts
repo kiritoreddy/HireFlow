@@ -3,9 +3,11 @@ import { DashboardComponent } from './pages/dashboard/dashboard.component';
 import { AppLayoutComponent } from './layout/app-layout.component';
 import { authGuard } from './core/auth/auth.guard';
 import { adminGuard } from './core/auth/admin.guard';
+import { hiringOnlyGuard } from './core/auth/candidate.guard';
 
 export const routes: Routes = [
   { path: 'login', loadComponent: () => import('./pages/login/login.component').then(m => m.LoginComponent) },
+  { path: 'register', loadComponent: () => import('./pages/register/register.component').then(m => m.RegisterComponent) },
   { path: 'forgot-password', loadComponent: () => import('./pages/forgot-password/forgot-password.component').then(m => m.ForgotPasswordComponent) },
   { path: 'reset-password', loadComponent: () => import('./pages/reset-password/reset-password.component').then(m => m.ResetPasswordComponent) },
   {
@@ -16,16 +18,19 @@ export const routes: Routes = [
       { path: '', component: DashboardComponent },
       {
         path: 'candidates',
+        canActivate: [hiringOnlyGuard],
         loadComponent: () =>
           import('./pages/candidates/candidates-overview.component').then(m => m.CandidatesOverviewComponent),
       },
       {
         path: 'jobs/:id/candidates',
+        canActivate: [hiringOnlyGuard],
         loadComponent: () =>
           import('./pages/job-candidates/job-candidates.component').then(m => m.JobCandidatesComponent),
       },
       {
         path: 'jobs',
+        canActivate: [hiringOnlyGuard],
         loadComponent: () => import('./pages/jobs/jobs.component').then(m => m.JobsComponent),
       },
       {
