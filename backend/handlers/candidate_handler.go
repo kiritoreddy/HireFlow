@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"backend/middleware"
 	"backend/models"
@@ -45,6 +46,7 @@ type myApplicationListItem struct {
 	Department string `json:"department,omitempty"`
 	Stage      string `json:"stage"`
 	RawStage   string `json:"raw_status,omitempty"`
+	AppliedAt  string `json:"applied_at,omitempty"`
 }
 
 var allowedStages = map[string]bool{
@@ -159,6 +161,19 @@ func (h *CandidateHandler) ApplyWithCandidate(w http.ResponseWriter, r *http.Req
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to look up candidate"})
+		return
+	}
+	var activeApp models.Application
+	dupQ := h.DB.Where("candidate_id = ? AND job_id = ? AND UPPER(TRIM(status)) <> ?", cand.ID, req.JobID, "WITHDRAWN")
+	if err := dupQ.First(&activeApp).Error; err == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusConflict)
+		json.NewEncoder(w).Encode(map[string]string{"error": "You have already applied for this job"})
+		return
+	} else if err != gorm.ErrRecordNotFound {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to check existing application"})
 		return
 	}
 	app := models.Application{
@@ -311,6 +326,10 @@ func (h *CandidateHandler) ListMyApplications(w http.ResponseWriter, r *http.Req
 			title = a.Job.Title
 			dept = a.Job.Department
 		}
+		appliedAt := ""
+		if !a.CreatedAt.IsZero() {
+			appliedAt = a.CreatedAt.UTC().Format(time.RFC3339)
+		}
 		out = append(out, myApplicationListItem{
 			ID:         strconv.FormatUint(uint64(a.ID), 10),
 			JobID:      a.JobID,
@@ -318,6 +337,7 @@ func (h *CandidateHandler) ListMyApplications(w http.ResponseWriter, r *http.Req
 			Department: dept,
 			Stage:      statusToCandidatePortalStage(a.Status),
 			RawStage:   a.Status,
+			AppliedAt:  appliedAt,
 		})
 	}
 	w.Header().Set("Content-Type", "application/json")

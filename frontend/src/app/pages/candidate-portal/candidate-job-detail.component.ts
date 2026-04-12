@@ -8,10 +8,13 @@ import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { JobsApiService } from '../../core/services/jobs-api.service';
 import { CandidatesApiService } from '../../core/services/candidates-api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { Job } from '../../core/models/job.model';
+import { MyApplication } from '../../core/models/my-application.model';
 
 @Component({
   selector: 'app-candidate-job-detail',
@@ -43,6 +46,8 @@ export class CandidateJobDetailComponent implements OnInit {
   loading = signal(true);
   notFound = signal(false);
   submitting = signal(false);
+  /** Active application for this job (not withdrawn), if any. */
+  existingApplication = signal<MyApplication | null>(null);
 
   applicantName = '';
   applicantEmail = '';
@@ -59,9 +64,15 @@ export class CandidateJobDetailComponent implements OnInit {
       this.loading.set(false);
       return;
     }
-    this.jobsApi.getJobById(this.jobId).subscribe({
-      next: (j) => {
-        this.job.set(j);
+
+    forkJoin({
+      job: this.jobsApi.getJobById(this.jobId),
+      apps: this.candidatesApi.listMyApplications().pipe(catchError(() => of<MyApplication[]>([]))),
+    }).subscribe({
+      next: ({ job, apps }) => {
+        this.job.set(job);
+        const active = this.pickActiveApplicationForJob(apps, this.jobId);
+        this.existingApplication.set(active);
         this.loading.set(false);
       },
       error: () => {
@@ -71,9 +82,24 @@ export class CandidateJobDetailComponent implements OnInit {
     });
   }
 
+  private pickActiveApplicationForJob(apps: MyApplication[], jobId: number): MyApplication | null {
+    const forJob = apps.filter(
+      (a) => a.jobId === jobId && (a.rawStatus ?? '').toUpperCase().trim() !== 'WITHDRAWN'
+    );
+    if (forJob.length === 0) {
+      return null;
+    }
+    forJob.sort((a, b) => {
+      const ta = a.appliedAt ?? '';
+      const tb = b.appliedAt ?? '';
+      return tb.localeCompare(ta);
+    });
+    return forJob[0] ?? null;
+  }
+
   submitApplication(): void {
     const j = this.job();
-    if (!j || j.status !== 'Open') {
+    if (!j || j.status !== 'Open' || this.existingApplication()) {
       return;
     }
     const name = this.applicantName.trim();
@@ -98,9 +124,19 @@ export class CandidateJobDetailComponent implements OnInit {
         },
         error: (err) => {
           this.submitting.set(false);
+          const bodyErr = err?.error?.error;
+          if (err?.status === 409 && typeof bodyErr === 'string') {
+            this.snackBar.open(bodyErr, 'Close', { duration: 5000 });
+            void this.candidatesApi
+              .listMyApplications()
+              .pipe(catchError(() => of<MyApplication[]>([])))
+              .subscribe((apps) => {
+                this.existingApplication.set(this.pickActiveApplicationForJob(apps, this.jobId));
+              });
+            return;
+          }
           const msg =
-            err?.error?.error ??
-            (err?.status === 0 ? 'Cannot reach server.' : 'Could not submit application.');
+            bodyErr ?? (err?.status === 0 ? 'Cannot reach server.' : 'Could not submit application.');
           this.snackBar.open(msg, 'Close', { duration: 5000 });
         },
       });

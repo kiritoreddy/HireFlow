@@ -20,6 +20,28 @@
 
       @if (j.status !== 'Open') {
         <p class="closed-note">This role is not accepting applications.</p>
+      } @else if (existingApplication(); as existing) {
+        <section class="apply-panel already-applied" data-cy="portal-already-applied">
+          <h2>Already applied</h2>
+          <p class="apply-hint">You have an active application for this role.</p>
+          <dl class="applied-facts">
+            <div>
+              <dt>Status</dt>
+              <dd data-cy="portal-applied-status">{{ existing.stage }}</dd>
+            </div>
+            <div>
+              <dt>Applied on</dt>
+              <dd data-cy="portal-applied-at">
+                @if (existing.appliedAt) {
+                  {{ existing.appliedAt | date: 'medium' }}
+                } @else {
+                  —
+                }
+              </dd>
+            </div>
+          </dl>
+          <a mat-stroked-button routerLink="/portal/applications">View all my applications</a>
+        </section>
       } @else {
         <section class="apply-panel" data-cy="portal-apply-form">
           <h2>Apply</h2>

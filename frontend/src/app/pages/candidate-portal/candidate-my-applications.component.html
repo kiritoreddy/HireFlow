@@ -26,7 +26,8 @@
         <tr>
           <th>Job</th>
           <th>Department</th>
-          <th>Stage</th>
+          <th>Applied on</th>
+          <th>Status</th>
           <th></th>
         </tr>
       </thead>
@@ -37,7 +38,14 @@
               <a [routerLink]="['/portal/jobs', row.jobId]">{{ row.jobTitle }}</a>
             </td>
             <td>{{ row.department || '—' }}</td>
-            <td>{{ row.stage }}</td>
+            <td data-cy="portal-app-applied-at">
+              @if (row.appliedAt) {
+                {{ row.appliedAt | date: 'medium' }}
+              } @else {
+                —
+              }
+            </td>
+            <td data-cy="portal-app-status">{{ row.stage }}</td>
             <td class="actions">
               @if (canWithdraw(row)) {
                 <button
