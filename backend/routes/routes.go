@@ -31,6 +31,14 @@ func SetupRoutes(db *gorm.DB) http.Handler {
 	router.HandleFunc("/users/{id}",
 		middleware.RequireAuth(middleware.RequireAdmin(userHandler.SetUserActive))).Methods("PATCH")
 
+	// Dashboard stats (admin, hiring_manager, interviewer only)
+	dashboardHandler := &handlers.DashboardHandler{DB: db}
+	router.HandleFunc("/dashboard/stats",
+		middleware.RequireAuth(
+			middleware.RequireRole("admin", "hiring_manager", "interviewer")(dashboardHandler.GetDashboardStats),
+		),
+	).Methods("GET")
+
 	// Job endpoints
 	jobHandler := &handlers.JobHandler{DB: db}
 	router.HandleFunc("/jobs",
