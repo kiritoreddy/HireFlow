@@ -59,8 +59,31 @@ Sprint 3 focused on completing unfinished Sprint 2 issues, improving the authent
 
 ---
 
-### Backend
-> *(To be filled in by backend teammates)*
+### Backend (Person 2 — Candidate APIs & Data Model)
+
+#### Secured Candidate Routes
+- `POST /api/candidate/apply` — requires JWT (`candidate` role only); email is forced from token claims, preventing spoofing; duplicate apply is blocked unless previous application was `WITHDRAWN`
+- `GET /api/candidate/applications` — JWT secured; returns only applications belonging to the authenticated candidate, looked up by email from token claims
+- `PATCH /api/candidate/applications/{id}/withdraw` — JWT required + ownership check; returns 403 if the application does not belong to the caller
+- `DELETE /api/candidate/applications/{id}` — candidates can delete their own applications; `hiring_manager` and `admin` can delete any
+
+#### Role Enforcement on Existing Routes
+- `GET /api/candidate/jobs/{jobId}/applications` — restricted to `hiring_manager` and `admin` only
+- `PATCH /api/candidate/applications/{id}/stage` — restricted to `hiring_manager` and `admin` only
+- Removed the old insecure `GET /api/candidate/applications?candidate_id=...` route that had no auth
+
+#### Resume Handling
+- Minimal viable approach implemented: `resume_path` field (string) stores filename or path submitted by the client
+- No file upload endpoint in Sprint 3; S3/local upload noted as future work
+
+#### Duplicate Apply Protection
+- Re-applying to the same job is blocked if an active application exists
+- Re-apply is allowed if the previous application has `WITHDRAWN` status
+
+---
+
+### Backend (Person 1)
+> *(To be filled in by teammate)*
 
 ---
 
@@ -141,13 +164,47 @@ Sprint 3 focused on completing unfinished Sprint 2 issues, improving the authent
 
 ## 3. Backend Unit Tests
 
-> *(To be filled in by backend teammates)*
+### Backend Person 2 — Candidate Handler Tests: 17 tests
+
+#### Apply (`TestApplyWithCandidate_*`) — 7 tests
+- Returns 401 when no JWT token provided
+- Returns 403 when caller is not a candidate role
+- Returns 400 when job_id is missing or zero
+- Returns 404 when job does not exist
+- Returns 201 on successful application
+- Returns 409 when candidate has already applied to the same job
+- Returns 201 when re-applying after a previous withdrawal
+
+#### List My Applications (`TestListMyApplications_*`) — 3 tests
+- Returns 401 when no JWT token provided
+- Returns 200 with empty list for unknown candidate
+- Returns only the authenticated candidate's own applications
+
+#### Withdraw (`TestWithdrawApplication_*`) — 4 tests
+- Returns 401 when no JWT token provided
+- Returns 404 when application does not exist
+- Returns 403 when candidate tries to withdraw another candidate's application
+- Returns 200 and sets status to WITHDRAWN on success
+
+#### Delete (`TestDeleteApplication_*`) — 4 tests
+- Returns 401 when no JWT token provided
+- Returns 204 when candidate deletes their own application
+- Returns 403 when candidate tries to delete another candidate's application
+- Returns 204 when admin deletes any application
+
+#### Update Stage (`TestUpdateApplicationStage_*`) — 2 tests  (carried from BE1 work, extended by BE2)
+- Returns 400 for invalid stage value
+- Returns 200 and updates status correctly for valid stage
+
+### Backend Person 1 — Tests
+> *(To be filled in by teammate)*
 
 Auth: ___ tests
 Users: ___ tests
 Jobs: ___ tests
-Candidates: ___ tests
-**Total: ___ tests**
+**Total BE1: ___ tests**
+
+**Total Backend: 17+ tests**
 
 ---
 
@@ -187,12 +244,12 @@ Authentication: Bearer JWT Token
 
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
-| POST | `/api/candidate/apply` | Submit job application | Yes |
-| GET | `/api/candidate/jobs/{jobId}/applications` | List applications for a job | Yes |
-| PATCH | `/api/candidate/applications/{id}/stage` | Update application stage | Yes |
-| DELETE | `/api/candidate/applications/{id}` | Remove application | Yes |
-| GET | `/api/candidate/applications` | Get applications by candidate | Yes |
-| PATCH | `/api/candidate/applications/{id}/withdraw` | Withdraw application | Yes |
+| POST | `/api/candidate/apply` | Submit job application | Candidate only |
+| GET | `/api/candidate/jobs/{jobId}/applications` | List applications for a job | Hiring Manager/Admin |
+| PATCH | `/api/candidate/applications/{id}/stage` | Update application stage | Hiring Manager/Admin |
+| DELETE | `/api/candidate/applications/{id}` | Remove application | Candidate (own) / Admin |
+| GET | `/api/candidate/applications` | Get own applications | Candidate only |
+| PATCH | `/api/candidate/applications/{id}/withdraw` | Withdraw application | Candidate (own only) |
 
 ### Health
 
@@ -214,8 +271,19 @@ Authentication: Bearer JWT Token
 - Stage badges with color coding
 - 40+ unit tests across 7 spec files
 
-### Backend Completed
-> *(To be filled in by backend teammates)*
+### Backend Completed (Person 2)
+- All candidate API endpoints secured with JWT authentication
+- Ownership enforcement on withdraw and delete operations
+- Role-based access control: candidates vs hiring_manager/admin on all routes
+- Duplicate application protection with re-apply after withdraw support
+- New `DELETE /api/candidate/applications/{id}` endpoint added
+- Removed insecure unauthenticated candidate applications route
+- Resume handling: filename/path stored in `resume_path` field
+- 17 unit tests covering all candidate handler functions
+- `ContextWithClaims` helper added to middleware for test injection
+
+### Backend Completed (Person 1)
+> *(To be filled in by teammate)*
 
 ---
 
