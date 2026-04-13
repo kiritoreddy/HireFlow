@@ -135,8 +135,14 @@ export class CandidateJobDetailComponent implements OnInit {
         },
         error: (err) => {
           this.submitting.set(false);
-          const bodyErr = err?.error?.error;
-          if (err?.status === 409 && typeof bodyErr === 'string') {
+          const raw = err?.error;
+          const bodyErr =
+            typeof raw === 'string'
+              ? raw.trim()
+              : typeof raw === 'object' && raw !== null && 'error' in raw
+                ? String((raw as { error?: unknown }).error ?? '').trim()
+                : '';
+          if (err?.status === 409 && bodyErr) {
             this.snackBar.open(bodyErr, 'Close', { duration: 5000 });
             void this.candidatesApi
               .listMyApplications()
@@ -147,7 +153,8 @@ export class CandidateJobDetailComponent implements OnInit {
             return;
           }
           const msg =
-            bodyErr ?? (err?.status === 0 ? 'Cannot reach server.' : 'Could not submit application.');
+            bodyErr ||
+            (err?.status === 0 ? 'Cannot reach server. Is the API running on port 8080?' : 'Could not submit application.');
           this.snackBar.open(msg, 'Close', { duration: 5000 });
         },
       });

@@ -58,11 +58,18 @@ func normalizeStageInput(s string) (string, bool) {
 // lookupCandidateByEmail returns the canonical candidate row for portal APIs.
 // Uses LOWER(TRIM(email)) and stable ordering so Apply and List resolve the same row
 // if legacy data ever had inconsistent casing or whitespace.
+// Uses Find+Limit instead of First so GORM does not log "record not found" when no row exists yet
+// (expected on a candidate's first apply before a Candidate row is created).
 func lookupCandidateByEmail(db *gorm.DB, email string) (models.Candidate, error) {
 	key := strings.ToLower(strings.TrimSpace(email))
-	var cand models.Candidate
-	err := db.Where("LOWER(TRIM(email)) = ?", key).Order("id ASC").First(&cand).Error
-	return cand, err
+	var rows []models.Candidate
+	if err := db.Where("LOWER(TRIM(email)) = ?", key).Order("id ASC").Limit(1).Find(&rows).Error; err != nil {
+		return models.Candidate{}, err
+	}
+	if len(rows) == 0 {
+		return models.Candidate{}, gorm.ErrRecordNotFound
+	}
+	return rows[0], nil
 }
 
 func statusToCandidatePortalStage(status string) string {
@@ -107,12 +114,14 @@ func (h *CandidateHandler) ApplyWithCandidate(w http.ResponseWriter, r *http.Req
 
 	claims, ok := middleware.JWTClaimsFromRequest(r)
 	if !ok || claims == nil {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Unauthorized"})
 		return
 	}
 
 	if claims.Role != "candidate" {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Only candidate accounts can apply through the portal"})
 		return
 	}
 
