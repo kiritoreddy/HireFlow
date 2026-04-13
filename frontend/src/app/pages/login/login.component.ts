@@ -53,9 +53,7 @@ export class LoginComponent implements OnInit {
       this.loading = false;
 
       if (result === true) {
-        const role = this.auth.getCurrentUser()?.role ?? '';
-        const destination = role === 'candidate' ? '/portal/jobs' : '/dashboard';
-        this.router.navigate([destination]);
+        this.router.navigate(['/']);
       } else {
         this.error = (result as { error: string }).error ?? 'Invalid credentials';
       }
