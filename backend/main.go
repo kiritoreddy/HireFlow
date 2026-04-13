@@ -25,10 +25,9 @@ func main() {
 		log.Fatal("failed to migrate database:", err)
 	}
 
-	// Seed default admin user if none exists
+	// Seed default users if they don't exist
 	seeder.SeedAdmin(db)
-	// Sample jobs / candidates / applications when DB has no jobs yet
-	seeder.SeedDemoData(db)
+	seeder.SeedCandidate(db) // ← ADDED: Test candidate for E2E testing
 
 	// Setup routes with CORS middleware
 	handler := routes.SetupRoutes(db)
