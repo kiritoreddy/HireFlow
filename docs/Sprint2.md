@@ -121,38 +121,37 @@ Obtain a token via `POST /auth/login`.
 
 **Description:** Register a new user account  
 **Auth Required:** No  
-**Role Required:** None
+**Role Required:** None  
+> ⚠️ **Updated in Sprint 3:** Self-registration always creates `candidate` role.
+> To create admin/hiring_manager/interviewer accounts, use `POST /users` (admin only).
 
 **Request Body:**
-
 ```json
 {
   "name": "John Doe",
   "email": "john@example.com",
-  "password": "SecurePass123!",
-  "role": "hiring_manager"
+  "password": "SecurePass123!"
 }
 ```
 
 **Password Rules:**
-
 - Minimum 8 characters
 - At least one uppercase letter
 - At least one lowercase letter
 - At least one number
-- At least one special character (!@#$%^&\*)
+- At least one special character (!@#$%^&*)
 
-**Valid Roles:** `admin`, `hiring_manager`, `interviewer`, `candidate`
+**Note:** The `role` field is accepted but ignored. All self-registered users
+are assigned `candidate` role automatically. This prevents privilege escalation.
 
 **Success Response (201 Created):**
-
 ```json
 {
   "user": {
     "id": 1,
     "name": "John Doe",
     "email": "john@example.com",
-    "role": "hiring_manager",
+    "role": "candidate",
     "is_active": true
   },
   "access_token": "eyJhbGciOiJIUzI1NiIs...",
@@ -162,13 +161,12 @@ Obtain a token via `POST /auth/login`.
 
 **Error Responses:**
 
-| Status | Reason                   |
-| ------ | ------------------------ |
-| 400    | Missing required fields  |
-| 400    | Invalid email format     |
-| 400    | Weak password            |
-| 400    | Invalid role             |
-| 409    | Email already registered |
+| Status | Reason |
+|--------|--------|
+| 400 | Missing required fields |
+| 400 | Invalid email format |
+| 400 | Weak password |
+| 409 | Email already registered |
 
 ---
 
