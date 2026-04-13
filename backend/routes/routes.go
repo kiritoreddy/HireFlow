@@ -1,79 +1,85 @@
 package routes
 
 import (
-    "backend/handlers"
-    "backend/middleware"
-    "net/http"
+	"backend/handlers"
+	"backend/middleware"
+	"net/http"
 
-    "github.com/gorilla/mux"
-    "gorm.io/gorm"
+	"github.com/gorilla/mux"
+	"gorm.io/gorm"
 )
 
-// SetupRoutes configures all application routes
 func SetupRoutes(db *gorm.DB) http.Handler {
-    router := mux.NewRouter()
+	router := mux.NewRouter()
 
-    // Health check endpoint (public)
-    router.HandleFunc("/health", handlers.HealthHandler).Methods("GET")
+	// Health check (public)
+	router.HandleFunc("/health", handlers.HealthHandler).Methods("GET")
 
-    // Authentication endpoints (public - no auth required)
-    authHandler := &handlers.AuthHandler{DB: db}
-    router.HandleFunc("/auth/register", authHandler.Register).Methods("POST")
-    router.HandleFunc("/auth/login", authHandler.Login).Methods("POST")
-    router.HandleFunc("/auth/forgot-password", authHandler.ForgotPassword).Methods("POST")
-    router.HandleFunc("/auth/reset-password", authHandler.ResetPassword).Methods("POST")
+	// Auth (public)
+	authHandler := &handlers.AuthHandler{DB: db}
+	router.HandleFunc("/auth/register", authHandler.Register).Methods("POST")
+	router.HandleFunc("/auth/login", authHandler.Login).Methods("POST")
+	router.HandleFunc("/auth/forgot-password", authHandler.ForgotPassword).Methods("POST")
+	router.HandleFunc("/auth/reset-password", authHandler.ResetPassword).Methods("POST")
 
-    // Admin user management (JWT + admin role required)
-    userHandler := &handlers.UserHandler{DB: db}
-    router.HandleFunc("/users", middleware.RequireAuth(middleware.RequireAdmin(userHandler.ListUsers))).Methods("GET")
-    router.HandleFunc("/users", middleware.RequireAuth(middleware.RequireAdmin(userHandler.CreateUser))).Methods("POST")
-    router.HandleFunc("/users/{id}", middleware.RequireAuth(middleware.RequireAdmin(userHandler.SetUserActive))).Methods("PATCH")
+	// User management (admin only)
+	userHandler := &handlers.UserHandler{DB: db}
+	router.HandleFunc("/users",
+		middleware.RequireAuth(middleware.RequireAdmin(userHandler.ListUsers))).Methods("GET")
+	router.HandleFunc("/users",
+		middleware.RequireAuth(middleware.RequireAdmin(userHandler.CreateUser))).Methods("POST")
+	router.HandleFunc("/users/{id}",
+		middleware.RequireAuth(middleware.RequireAdmin(userHandler.SetUserActive))).Methods("PATCH")
 
-    // Dashboard stats endpoint (JWT required, all roles except candidate)
-    dashboardHandler := &handlers.DashboardHandler{DB: db}
-    router.HandleFunc("/dashboard/stats",
-        middleware.RequireAuth(
-            middleware.RequireRole("admin", "hiring_manager", "interviewer")(dashboardHandler.GetDashboardStats),
-        ),
-    ).Methods("GET")
+	// Dashboard stats (admin, hiring_manager, interviewer only)
+	dashboardHandler := &handlers.DashboardHandler{DB: db}
+	router.HandleFunc("/dashboard/stats",
+		middleware.RequireAuth(
+			middleware.RequireRole("admin", "hiring_manager", "interviewer")(dashboardHandler.GetDashboardStats),
+		),
+	).Methods("GET")
 
-    // Job endpoints
-    jobHandler := &handlers.JobHandler{DB: db}
+	// Job endpoints
+	jobHandler := &handlers.JobHandler{DB: db}
+	router.HandleFunc("/jobs",
+		middleware.RequireAuth(jobHandler.GetAllJobs)).Methods("GET")
+	router.HandleFunc("/jobs/{id}",
+		middleware.RequireAuth(jobHandler.GetJobByID)).Methods("GET")
+	router.HandleFunc("/jobs",
+		middleware.RequireAuth(middleware.RequireRole("hiring_manager", "admin")(jobHandler.CreateJob))).Methods("POST")
+	router.HandleFunc("/jobs/{id}",
+		middleware.RequireAuth(middleware.RequireRole("hiring_manager", "admin")(jobHandler.UpdateJob))).Methods("PUT")
+	router.HandleFunc("/jobs/{id}",
+		middleware.RequireAuth(middleware.RequireRole("hiring_manager", "admin")(jobHandler.DeleteJob))).Methods("DELETE")
 
-    // Job viewing (auth required, any role)
-    router.HandleFunc("/jobs", middleware.RequireAuth(jobHandler.GetAllJobs)).Methods("GET")
-    router.HandleFunc("/jobs/{id}", middleware.RequireAuth(jobHandler.GetJobByID)).Methods("GET")
+	// Candidate API endpoints (BE2)
+	candidateHandler := &handlers.CandidateHandler{DB: db}
 
-    // Job management (hiring_manager or admin only)
-    router.HandleFunc("/jobs", middleware.RequireAuth(middleware.RequireRole("hiring_manager", "admin")(jobHandler.CreateJob))).Methods("POST")
-    router.HandleFunc("/jobs/{id}", middleware.RequireAuth(middleware.RequireRole("hiring_manager", "admin")(jobHandler.UpdateJob))).Methods("PUT")
-    router.HandleFunc("/jobs/{id}", middleware.RequireAuth(middleware.RequireRole("hiring_manager", "admin")(jobHandler.DeleteJob))).Methods("DELETE")
+	// Candidate submits application (candidate only)
+	router.HandleFunc("/api/candidate/apply",
+		middleware.RequireAuth(middleware.RequireRole("candidate")(candidateHandler.ApplyWithCandidate))).Methods("POST")
 
-    // ---------------------------
-    // Candidate API endpoints (BE-2)
-    // Updated to match BE-2's current method names
-    // ---------------------------
-    candidateHandler := &handlers.CandidateHandler{DB: db}
+	// Hiring staff views applications for a job
+	router.HandleFunc("/api/candidate/jobs/{jobId}/applications",
+		middleware.RequireAuth(middleware.RequireRole("hiring_manager", "admin")(candidateHandler.ListApplicationsByJob))).Methods("GET")
 
-    // Apply to job (creates or reuses candidate by email)
-    router.HandleFunc("/api/candidate/apply", candidateHandler.ApplyWithCandidate).Methods("POST")
+	// Hiring staff updates application stage
+	router.HandleFunc("/api/candidate/applications/{id}/stage",
+		middleware.RequireAuth(middleware.RequireRole("hiring_manager", "admin")(candidateHandler.UpdateApplicationStage))).Methods("PATCH")
 
-    // List applications for a specific job (hiring pipeline view)
-    router.HandleFunc("/api/jobs/{jobId}/applications", candidateHandler.ListApplicationsByJob).Methods("GET")
+	// Candidate views their own applications
+	router.HandleFunc("/api/candidate/applications",
+		middleware.RequireAuth(middleware.RequireRole("candidate")(candidateHandler.ListMyApplications))).Methods("GET")
 
-    // Update application stage (pipeline stage movement)
-    router.HandleFunc("/api/applications/{id}/stage", candidateHandler.UpdateApplicationStage).Methods("PATCH")
+	// Candidate withdraws their own application
+	router.HandleFunc("/api/candidate/applications/{id}/withdraw",
+		middleware.RequireAuth(middleware.RequireRole("candidate")(candidateHandler.WithdrawApplication))).Methods("PATCH")
 
-    // Legacy: list applications by candidate_id query param
-    router.HandleFunc("/api/candidate/applications", candidateHandler.GetApplications).Methods("GET")
+	// Delete application (candidate = own only, hiring_manager/admin = any)
+	router.HandleFunc("/api/candidate/applications/{id}",
+		middleware.RequireAuth(candidateHandler.DeleteApplication)).Methods("DELETE")
 
-    // Candidate portal: list my applications (JWT required)
-    router.HandleFunc("/api/candidate/my-applications", candidateHandler.ListMyApplications).Methods("GET")
-
-    // Candidate portal: withdraw application (JWT required, must own application)
-    router.HandleFunc("/api/candidate/applications/{id}/withdraw", candidateHandler.WithdrawApplication).Methods("PATCH")
-
-    // Apply CORS middleware
-    corsHandler := middleware.SetupCORS()
-    return corsHandler(router)
+	// CORS
+	corsHandler := middleware.SetupCORS()
+	return corsHandler(router)
 }
