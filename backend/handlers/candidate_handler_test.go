@@ -3,9 +3,11 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
+	"strings"
 	"testing"
 
 	"backend/middleware"
@@ -142,6 +144,49 @@ func TestApplyWithCandidate_Success(t *testing.T) {
 	h.ApplyWithCandidate(rr, req)
 	if rr.Code != http.StatusCreated {
 		t.Errorf("expected 201, got %d — body: %s", rr.Code, rr.Body.String())
+	}
+}
+
+func TestApplyWithCandidate_MultipartStoresResumeFile(t *testing.T) {
+	t.Setenv("HF_UPLOAD_ROOT", t.TempDir())
+	db := setupCandidateTestDB(t)
+	h := &CandidateHandler{DB: db}
+	job := seedTestJob(t, db)
+
+	var buf bytes.Buffer
+	mw := multipart.NewWriter(&buf)
+	if err := mw.WriteField("job_id", strconv.Itoa(int(job.ID))); err != nil {
+		t.Fatal(err)
+	}
+	if err := mw.WriteField("name", "Resume User"); err != nil {
+		t.Fatal(err)
+	}
+	part, err := mw.CreateFormFile("resume", "cv.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := part.Write([]byte("%PDF-1.4")); err != nil {
+		t.Fatal(err)
+	}
+	if err := mw.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/candidate/apply", &buf)
+	req.Header.Set("Content-Type", mw.FormDataContentType())
+	req = withCandidateClaims(req, "candidate", "resumeuser@example.com")
+	rr := httptest.NewRecorder()
+	h.ApplyWithCandidate(rr, req)
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d — body: %s", rr.Code, rr.Body.String())
+	}
+
+	var cand models.Candidate
+	if err := db.Where("LOWER(TRIM(email)) = ?", "resumeuser@example.com").First(&cand).Error; err != nil {
+		t.Fatalf("candidate row: %v", err)
+	}
+	if cand.ResumePath == "" || !strings.Contains(cand.ResumePath, "uploads/resumes/") {
+		t.Fatalf("expected uploads/resumes path in resume_path, got %q", cand.ResumePath)
 	}
 }
 

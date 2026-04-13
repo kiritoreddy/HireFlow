@@ -1,10 +1,12 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { filter, merge, of } from 'rxjs';
 import { CandidatesApiService } from '../../core/services/candidates-api.service';
 import { MyApplication } from '../../core/models/my-application.model';
 
@@ -25,6 +27,8 @@ import { MyApplication } from '../../core/models/my-application.model';
 export class CandidateMyApplicationsComponent implements OnInit {
   private candidatesApi = inject(CandidatesApiService);
   private snackBar = inject(MatSnackBar);
+  private router = inject(Router);
+  private destroyRef = inject(DestroyRef);
 
   loading = signal(true);
   loadError = signal(false);
@@ -32,7 +36,18 @@ export class CandidateMyApplicationsComponent implements OnInit {
   withdrawingId = signal<string | null>(null);
 
   ngOnInit(): void {
-    this.refresh();
+    merge(
+      of(undefined),
+      this.router.events.pipe(
+        filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+        filter((e) => {
+          const path = e.urlAfterRedirects.split('?')[0];
+          return path === '/portal/applications';
+        }),
+      ),
+    )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.refresh());
   }
 
   refresh(): void {

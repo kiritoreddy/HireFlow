@@ -34,6 +34,9 @@
 backend/tmp/
 backend/build-errors.log
 
+# Uploaded resumes (local dev)
+uploads/
+
 # Node modules
 node_modules/
 

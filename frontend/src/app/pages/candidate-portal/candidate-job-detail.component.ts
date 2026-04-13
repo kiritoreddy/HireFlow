@@ -51,7 +51,8 @@ export class CandidateJobDetailComponent implements OnInit {
 
   applicantName = '';
   applicantEmail = '';
-  resumeNote = '';
+  /** Required resume file for this application (PDF or Word). */
+  resumeFile: File | null = null;
 
   ngOnInit(): void {
     const idParam = this.route.snapshot.paramMap.get('id');
@@ -97,6 +98,12 @@ export class CandidateJobDetailComponent implements OnInit {
     return forJob[0] ?? null;
   }
 
+  onResumePicked(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const f = input.files?.[0];
+    this.resumeFile = f ?? null;
+  }
+
   submitApplication(): void {
     const j = this.job();
     if (!j || j.status !== 'Open' || this.existingApplication()) {
@@ -108,13 +115,17 @@ export class CandidateJobDetailComponent implements OnInit {
       this.snackBar.open('Name and email are required.', 'Close', { duration: 4000 });
       return;
     }
+    const resume = this.resumeFile;
+    if (!resume) {
+      this.snackBar.open('Please attach your resume (PDF or Word, up to 5 MB).', 'Close', { duration: 5000 });
+      return;
+    }
     this.submitting.set(true);
     this.candidatesApi
       .apply({
         job_id: j.id,
         name,
-        email,
-        resume_path: this.resumeNote.trim() || undefined,
+        resume,
       })
       .subscribe({
         next: () => {

@@ -80,6 +80,33 @@
   margin-bottom: 0.5rem;
 }
 
+.resume-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+
+.resume-label {
+  font-size: 0.75rem;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.resume-field input[type='file'] {
+  max-width: 100%;
+}
+
+.resume-file-name {
+  font-size: 0.875rem;
+  color: rgba(0, 0, 0, 0.75);
+}
+
+.resume-placeholder {
+  font-size: 0.875rem;
+  color: rgba(0, 0, 0, 0.45);
+  font-style: italic;
+}
+
 .centered {
   display: flex;
   justify-content: center;

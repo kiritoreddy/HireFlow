@@ -1,61 +1,92 @@
 # HireFlow — Sprint 3
 
 ## Overview
-Sprint 3 focused on completing unfinished Sprint 2 issues, improving the authentication and role-based access system, adding candidate self-registration, and strengthening the frontend with new unit tests. The backend continued to mature with additional API improvements and test coverage.
+Sprint 3 focused on completing unfinished Sprint 2 issues, improving authentication and **role-based access**, adding **candidate self-registration**, and delivering **FE1** (auth, shell, guards) and **FE2** (live jobs and pipeline UI, dashboard stats, **candidate portal** with apply and my applications) on the frontend—with new **Vitest** and **Cypress** coverage. The backend gained secured candidate APIs, application lifecycle endpoints, optional **resume file** storage for portal apply, and expanded tests.
 
 ---
 
 ## 1. Work Completed in Sprint 3
 
-### Frontend (Person 2 — Auth, Shell, Dashboard)
+### Frontend — FE1 & FE2
 
-#### Candidate Registration
-- Built a dedicated `/register` page for candidate self-signup
-- Submits `POST /auth/register` with `role: "candidate"` to the backend
-- Full client-side validation: required fields, password match, minimum length
-- Redirects to `/login` with a success message after account creation
-- Error states for duplicate email or backend failures
-
-#### Login Page Improvements
-- Added **"New candidate? Create an account"** link → `/register`
-- Added **Google Sign-In button** (UI with OAuth redirect hook — backend OAuth configuration pending)
-- Added visual divider between email/password and social login
-- Clearer page copy distinguishing hiring staff vs. candidate login paths
-
-#### Role-Based Navigation
-- Sidebar now hides **Candidates** and **Jobs** links for `candidate` role users
-- **Users** link already hidden for non-admin users (carried from Sprint 2)
-- Candidates see only Dashboard on the sidebar — a clean, scoped experience
-
-#### Candidate Guard (`hiringOnlyGuard`)
-- New route guard blocks `candidate` role from accessing hiring-only routes:
-  - `/jobs` — job management table
-  - `/candidates` — hiring pipeline overview
-  - `/jobs/:id/candidates` — per-job candidate pipeline
-- Candidates are redirected to Dashboard with `?access=denied` query param
-- Unauthenticated users are redirected to `/login`
-
-#### Dashboard (API-Driven Stats)
-- Replaced all static/hardcoded numbers with live API data from `GET /jobs`
-- Stats cards: Total Jobs, Open Jobs, Closed Jobs, Total Candidates — all real
-- Hiring Summary panel shows per-department open/closed counts from the API
-- Loading state shown while data fetches; error handled gracefully
-
-#### Delete Functionality
-- **Delete Job** — action menu (⋯) on each job row with confirmation dialog; calls `DELETE /jobs/:id`; table refreshes automatically
-- **Delete Candidate** — per-row action menu in job candidates view; calls `DELETE /api/candidate/applications/:id`
-
-#### Stage Badges
-- Color-coded stage chips on the candidates table:
-  - Applied → blue
-  - Interview → yellow/amber
-  - Selected → green
-  - Rejected → red
+Sprint 3 frontend scope is grouped by **FE1** (authentication, shell, navigation, and access control) and **FE2** (job visibility, hiring workflows, dashboard, and the **candidate portal**). Together they replace mock-only flows with live `http://localhost:8080` APIs where noted.
 
 ---
 
-### Frontend (Person 1 — Jobs, Candidates)
-> *(To be filled in by teammate)*
+#### FE1 — Authentication, layout, navigation, and route protection
+
+**Session & identity**
+
+| Area | Implementation |
+|------|------------------|
+| **Login** (`/login`) | `AuthService.login` → `POST /auth/login`; stores JWT + user in `sessionStorage`. |
+| **Register** (`/register`) | Candidate self-signup → `POST /auth/register`; validation (required fields, password match, length); success → `/login`. |
+| **Forgot / reset password** | `/forgot-password`, `/reset-password` routed and wired to backend reset endpoints. |
+
+**HTTP & API wiring**
+
+- **`authInterceptor`** (`frontend/src/app/core/interceptors/auth.interceptor.ts`): attaches `Authorization: Bearer <token>` to same-origin API calls under `API_BASE_URL`; logs out on `401` from the API.
+- **`API_BASE_URL`** and shared route constants in `frontend/src/app/core/config/api.config.ts`.
+
+**Layout & role-based navigation** (`AppLayoutComponent`)
+
+- Header: HireFlow branding, profile menu (display name, email, role), logout.
+- **Candidate** sidebar: **Open roles** → `/portal/jobs`, **My applications** → `/portal/applications`; logo routes to portal jobs.
+- **Hiring / admin** sidebar: Dashboard, Jobs, Candidates; **Users** for admin only; logo routes to dashboard.
+
+**Route guards** (`app.routes.ts`)
+
+| Guard | Role |
+|-------|------|
+| `authGuard` | All authenticated shell routes. |
+| `hiringOnlyGuard` | Blocks `candidate` from `/dashboard`, `/jobs`, `/candidates`, `/jobs/:id/candidates` → home with `?access=denied`. |
+| `candidateGuard` | Only `candidate` may access `/portal/*`; others → `/dashboard`. |
+| `adminGuard` | Admin-only routes (e.g. `/users`). |
+
+**Post-login entry**
+
+- **`HomeRedirectComponent`**: `/` redirects candidates to `/portal/jobs` and other roles to `/dashboard`.
+
+**Login UX (incremental)**
+
+- Link to **Create an account** (`/register`), optional **Google Sign-In** placeholder (backend OAuth TBD), copy clarifying staff vs candidate paths.
+
+---
+
+#### FE2 — Jobs, hiring pipeline, dashboard, and candidate portal
+
+**Hiring — jobs & pipeline (live API)**
+
+| Route / feature | Description |
+|-----------------|-------------|
+| **`/jobs`** (`JobsComponent`) | List from `GET /jobs`; create/update via `JobsApiService`; **Delete job** from row menu → `DELETE /jobs/:id` with confirmation. |
+| **`/candidates`** (`CandidatesOverviewComponent`) | Job cards with candidate counts from API. |
+| **`/jobs/:id/candidates`** (`JobCandidatesComponent`) | Job header from `GET /jobs/:id`; applications from `GET /api/candidate/jobs/:jobId/applications`; search/filter; **stage** updates via `PATCH /api/candidate/applications/:id/stage`; **delete application** via `DELETE /api/candidate/applications/:id`; **add-candidate** dialog (client uses apply-shaped payload; server enforces JWT role on apply). |
+| **Stage badges** | Color-coded chips: Applied (blue), Interview (amber), Selected (green), Rejected (red). |
+
+**Dashboard** (`/dashboard`, `DashboardComponent`)
+
+- Metrics from **`DashboardApiService.getStats()`** → `GET /dashboard/stats` when available.
+- **Fallback**: aggregate stats from **`GET /jobs`** if dashboard stats fail or are empty.
+- Hiring summary style breakdowns from job payloads; loading and error states in the UI.
+
+**Candidate portal** (`/portal/...`, `candidateGuard`)
+
+| Route | Component | Behaviour |
+|-------|-----------|-----------|
+| `/portal/jobs` | `CandidateJobsBrowseComponent` | Lists **Open** jobs via `GET /jobs`. |
+| `/portal/jobs/:id` | `CandidateJobDetailComponent` | Job detail via `GET /jobs/:id`; **Already applied** when a non-withdrawn row exists for that job (from `GET /api/candidate/applications`); apply with name + email + **resume file** → `POST /api/candidate/apply` as **`multipart/form-data`** (`job_id`, `name`, `resume`). |
+| `/portal/applications` | `CandidateMyApplicationsComponent` | Table: job, department, applied date, status; **Withdraw** → `PATCH /api/candidate/applications/:id/withdraw`; list refresh on navigation to the route. |
+
+**Shared services**
+
+- **`JobsApiService`**: list, get by id, create, update, delete.
+- **`CandidatesApiService`**: `apply` (multipart `File` **or** JSON for tests/legacy), `listMyApplications`, `withdraw`, `deleteApplication`, job-scoped list and stage update for hiring views.
+- **`DashboardApiService`**: `GET /dashboard/stats`.
+
+**E2E (Cypress)**
+
+- `frontend/cypress/e2e/candidate-portal.cy.ts` — portal flows with HTTP intercepts (open roles, job detail, already-applied, my applications).
 
 ---
 
@@ -73,8 +104,9 @@ Sprint 3 focused on completing unfinished Sprint 2 issues, improving the authent
 - Removed the old insecure `GET /api/candidate/applications?candidate_id=...` route that had no auth
 
 #### Resume Handling
-- Minimal viable approach implemented: `resume_path` field (string) stores filename or path submitted by the client
-- No file upload endpoint in Sprint 3; S3/local upload noted as future work
+- **`resume_path`** on `Candidate` still stores a string path for compatibility and hiring JSON flows
+- **Candidate portal apply**: `POST /api/candidate/apply` also accepts **`multipart/form-data`** with a **`resume`** file (PDF/Word, size limit); files stored under `uploads/resumes/` (see `HF_UPLOAD_ROOT`); JSON apply remains for tests/legacy callers
+- Optional future work: authenticated download URLs, cloud storage (e.g. S3)
 
 #### Duplicate Apply Protection
 - Re-applying to the same job is blocked if an active application exists
@@ -91,11 +123,9 @@ Sprint 3 focused on completing unfinished Sprint 2 issues, improving the authent
 
 ### New Tests Added in Sprint 3
 
-#### `candidate.guard.spec.ts` — 4 tests
-- Allows admin users to access hiring routes
-- Allows hiring_manager users to access hiring routes
-- Redirects candidate users away from hiring routes
-- Redirects unauthenticated users to /login
+#### `candidate.guard.spec.ts` — 6 tests
+- `hiringOnlyGuard`: allows hiring roles to hiring routes; blocks `candidate` with redirect; sends unauthenticated users to login
+- `candidateGuard`: allows `candidate` to portal routes; redirects non-candidates to dashboard
 
 #### `register.component.spec.ts` — 6 tests
 - Component creates successfully
@@ -106,15 +136,8 @@ Sprint 3 focused on completing unfinished Sprint 2 issues, improving the authent
 - Shows success message on successful registration
 - Shows error message on failed registration (e.g. duplicate email)
 
-#### `dashboard.component.spec.ts` — 8 tests
-- Component creates successfully
-- Computes totalJobs from API response
-- Computes openJobs correctly
-- Computes closedJobs correctly
-- Computes totalCandidates as sum of all stage counts
-- Builds departmentSummary from API jobs
-- Sets loading to false after successful fetch
-- Sets loading to false even on API error
+#### `dashboard.component.spec.ts` — 9 tests
+- Mocks `DashboardApiService.getStats()` primary path; validates fallback aggregation from `JobsApiService.getJobs()` when stats missing or empty; double-failure handling; department summary and loading/error behaviour
 
 #### `jobs-api.service.spec.ts` (formerly job-data.service.spec.ts) — 5 tests
 - Service creates successfully
@@ -133,7 +156,7 @@ Sprint 3 focused on completing unfinished Sprint 2 issues, improving the authent
 - Sets loading to false after successful fetch
 - Sets loading to false and empties array on error
 
-#### `job-candidates.component.spec.ts` — 13 tests
+#### `job-candidates.component.spec.ts` — 17 tests
 - Component creates successfully
 - Loads correct job title from API
 - Loads correct department from API
@@ -150,6 +173,10 @@ Sprint 3 focused on completing unfinished Sprint 2 issues, improving the authent
 - Sets loading to false after candidates load
 - Handles API error gracefully
 
+#### Cypress (candidate portal)
+
+- `frontend/cypress/e2e/candidate-portal.cy.ts` — open roles → job detail, already-applied state, my applications table
+
 ### Tests Carried from Sprint 2
 - `auth.service.spec.ts`
 - `auth.guard.spec.ts`
@@ -164,14 +191,15 @@ Sprint 3 focused on completing unfinished Sprint 2 issues, improving the authent
 
 ## 3. Backend Unit Tests
 
-### Backend Person 2 — Candidate Handler Tests: 17 tests
+### Backend Person 2 — Candidate Handler Tests: 21 tests
 
-#### Apply (`TestApplyWithCandidate_*`) — 7 tests
+#### Apply (`TestApplyWithCandidate_*`) — 8 tests
 - Returns 401 when no JWT token provided
 - Returns 403 when caller is not a candidate role
 - Returns 400 when job_id is missing or zero
 - Returns 404 when job does not exist
-- Returns 201 on successful application
+- Returns 201 on successful application (JSON body)
+- Returns 201 on successful application with **multipart** resume file and persists `resume_path` under `uploads/resumes/`
 - Returns 409 when candidate has already applied to the same job
 - Returns 201 when re-applying after a previous withdrawal
 
@@ -204,7 +232,7 @@ Users: ___ tests
 Jobs: ___ tests
 **Total BE1: ___ tests**
 
-**Total Backend: 17+ tests**
+**Total Backend:** 21 candidate-handler tests plus `backend/routes/routes_candidate_flow_test.go` (HTTP apply → list)
 
 ---
 
@@ -244,7 +272,7 @@ Authentication: Bearer JWT Token
 
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
-| POST | `/api/candidate/apply` | Submit job application | Candidate only |
+| POST | `/api/candidate/apply` | Submit job application (JSON **or** `multipart/form-data` with `job_id`, `name`, `resume` file for portal) | Candidate only |
 | GET | `/api/candidate/jobs/{jobId}/applications` | List applications for a job | Hiring Manager/Admin |
 | PATCH | `/api/candidate/applications/{id}/stage` | Update application stage | Hiring Manager/Admin |
 | DELETE | `/api/candidate/applications/{id}` | Remove application | Candidate (own) / Admin |
@@ -261,15 +289,9 @@ Authentication: Bearer JWT Token
 
 ## 5. Summary
 
-### Frontend Completed
-- Candidate registration page (`/register`) with validation
-- Google Sign-In button on login page
-- Role-based navigation (candidates see only Dashboard)
-- `hiringOnlyGuard` blocking candidates from hiring routes
-- Live API-driven dashboard stats
-- Delete jobs and candidates with confirmation
-- Stage badges with color coding
-- 40+ unit tests across 7 spec files
+### Frontend Completed (FE1 & FE2)
+- **FE1:** Login/register/forgot/reset flows; JWT session; `authInterceptor`; role-aware layout and sidebar; `authGuard`, `hiringOnlyGuard`, `candidateGuard`, `adminGuard`; home redirect by role
+- **FE2:** Live jobs CRUD and delete; candidates overview and per-job pipeline (search, filters, stage updates, delete application, badges); dashboard stats with `/dashboard/stats` + jobs fallback; **candidate portal** (browse open roles, job detail, multipart resume apply, my applications, withdraw); shared API config and services; Cypress portal smoke tests; Vitest coverage including dashboard + guard specs above
 
 ### Backend Completed (Person 2)
 - All candidate API endpoints secured with JWT authentication
@@ -278,8 +300,8 @@ Authentication: Bearer JWT Token
 - Duplicate application protection with re-apply after withdraw support
 - New `DELETE /api/candidate/applications/{id}` endpoint added
 - Removed insecure unauthenticated candidate applications route
-- Resume handling: filename/path stored in `resume_path` field
-- 17 unit tests covering all candidate handler functions
+- Resume handling: `resume_path` string; portal multipart upload saves files under `uploads/resumes/`
+- 21 unit tests covering candidate handler flows (including multipart resume) plus an HTTP-level apply→list route test
 - `ContextWithClaims` helper added to middleware for test injection
 
 ### Backend Completed (Person 1)
@@ -288,4 +310,4 @@ Authentication: Bearer JWT Token
 ---
 
 ## Conclusion
-Sprint 3 significantly improves the role-based access control system, adds candidate self-registration, and ensures the frontend is fully integrated with the live backend API for all key workflows.
+Sprint 3 tightens **role-based access** end-to-end, ships **FE1** (auth, shell, guards) and **FE2** (jobs, pipeline, dashboard, candidate portal) against the live API, and backs candidate workflows with secured backend endpoints, optional **resume uploads**, and automated tests (Vitest + Cypress + Go).

@@ -55,6 +55,16 @@ func normalizeStageInput(s string) (string, bool) {
 	return "", false
 }
 
+// lookupCandidateByEmail returns the canonical candidate row for portal APIs.
+// Uses LOWER(TRIM(email)) and stable ordering so Apply and List resolve the same row
+// if legacy data ever had inconsistent casing or whitespace.
+func lookupCandidateByEmail(db *gorm.DB, email string) (models.Candidate, error) {
+	key := strings.ToLower(strings.TrimSpace(email))
+	var cand models.Candidate
+	err := db.Where("LOWER(TRIM(email)) = ?", key).Order("id ASC").First(&cand).Error
+	return cand, err
+}
+
 func statusToCandidatePortalStage(status string) string {
 	switch strings.ToUpper(strings.TrimSpace(status)) {
 	case "APPLIED":
@@ -73,11 +83,26 @@ func statusToCandidatePortalStage(status string) string {
 }
 
 func (h *CandidateHandler) ApplyWithCandidate(w http.ResponseWriter, r *http.Request) {
-	var req applyWithCandidateRequest
+	w.Header().Set("Content-Type", "application/json")
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
+	var req applyWithCandidateRequest
+	ct := strings.ToLower(strings.TrimSpace(r.Header.Get("Content-Type")))
+	if strings.HasPrefix(ct, "multipart/form-data") {
+		jid, name, relPath, err := parseApplyMultipart(r)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		req.JobID = jid
+		req.Name = name
+		req.ResumePath = relPath
+	} else {
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Invalid request body"})
+			return
+		}
 	}
 
 	claims, ok := middleware.JWTClaimsFromRequest(r)
@@ -108,8 +133,7 @@ func (h *CandidateHandler) ApplyWithCandidate(w http.ResponseWriter, r *http.Req
 
 	email := strings.ToLower(strings.TrimSpace(req.Email))
 
-	var cand models.Candidate
-	err := h.DB.Where("LOWER(email) = ?", email).First(&cand).Error
+	cand, err := lookupCandidateByEmail(h.DB, email)
 
 	if err == gorm.ErrRecordNotFound {
 		cand = models.Candidate{
@@ -126,6 +150,21 @@ func (h *CandidateHandler) ApplyWithCandidate(w http.ResponseWriter, r *http.Req
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to look up candidate"})
 		return
+	} else {
+		updates := map[string]interface{}{}
+		if n := strings.TrimSpace(req.Name); n != "" {
+			updates["name"] = n
+		}
+		if p := strings.TrimSpace(req.ResumePath); p != "" {
+			updates["resume_path"] = p
+		}
+		if len(updates) > 0 {
+			if err := h.DB.Model(&cand).Updates(updates).Error; err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(map[string]string{"error": "Failed to update candidate profile"})
+				return
+			}
+		}
 	}
 
 	var activeApp models.Application
@@ -204,8 +243,8 @@ func (h *CandidateHandler) ListMyApplications(w http.ResponseWriter, r *http.Req
 
 	email := strings.ToLower(strings.TrimSpace(claims.Email))
 
-	var cand models.Candidate
-	if err := h.DB.Where("LOWER(email) = ?", email).First(&cand).Error; err != nil {
+	cand, err := lookupCandidateByEmail(h.DB, email)
+	if err != nil {
 		json.NewEncoder(w).Encode([]myApplicationListItem{})
 		return
 	}
@@ -243,14 +282,16 @@ func (h *CandidateHandler) WithdrawApplication(w http.ResponseWriter, r *http.Re
 	idStr := mux.Vars(r)["id"]
 	appID, _ := strconv.Atoi(idStr)
 
-	email := strings.ToLower(strings.TrimSpace(claims.Email))
-
-	var cand models.Candidate
-	h.DB.Where("LOWER(email) = ?", email).First(&cand)
-
 	var app models.Application
 	if err := h.DB.First(&app, appID).Error; err != nil {
 		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	email := strings.ToLower(strings.TrimSpace(claims.Email))
+	cand, err := lookupCandidateByEmail(h.DB, email)
+	if err != nil {
+		w.WriteHeader(http.StatusForbidden)
 		return
 	}
 
@@ -287,8 +328,8 @@ func (h *CandidateHandler) DeleteApplication(w http.ResponseWriter, r *http.Requ
 
 	if claims.Role == "candidate" {
 		email := strings.ToLower(strings.TrimSpace(claims.Email))
-		var cand models.Candidate
-		if err := h.DB.Where("LOWER(email) = ?", email).First(&cand).Error; err != nil {
+		cand, err := lookupCandidateByEmail(h.DB, email)
+		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
 			return
 		}

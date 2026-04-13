@@ -1,4 +1,4 @@
-/** Row from GET /api/candidate/me/applications */
+/** Row from GET /api/candidate/applications (candidate’s own list). */
 export interface MyApplication {
   id: string;
   jobId: number;

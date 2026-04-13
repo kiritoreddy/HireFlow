@@ -48,8 +48,30 @@ export class CandidatesApiService {
       .pipe(map((rows) => rows.map(mapRow)));
   }
 
-  apply(payload: { job_id: number; name: string; email: string; resume_path?: string }): Observable<void> {
-    return this.http.post(CANDIDATE_ENDPOINTS.apply, payload).pipe(map(() => undefined));
+  /**
+   * Submit application. Candidate portal sends a `resume` file (multipart). JSON body is still
+   * supported for tests and legacy callers (expects `email` + optional `resume_path` string).
+   */
+  apply(
+    payload:
+      | { job_id: number; name: string; resume: File }
+      | { job_id: number; name: string; email: string; resume_path?: string }
+  ): Observable<void> {
+    if ('resume' in payload) {
+      const fd = new FormData();
+      fd.set('job_id', String(payload.job_id));
+      fd.set('name', payload.name);
+      fd.set('resume', payload.resume, payload.resume.name);
+      return this.http.post(CANDIDATE_ENDPOINTS.apply, fd).pipe(map(() => undefined));
+    }
+    return this.http
+      .post(CANDIDATE_ENDPOINTS.apply, {
+        job_id: payload.job_id,
+        name: payload.name,
+        email: payload.email,
+        resume_path: payload.resume_path,
+      })
+      .pipe(map(() => undefined));
   }
 
   updateStage(applicationId: string, stage: CandidateStage): Observable<void> {

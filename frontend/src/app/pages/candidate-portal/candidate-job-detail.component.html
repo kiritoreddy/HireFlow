@@ -45,7 +45,7 @@
       } @else {
         <section class="apply-panel" data-cy="portal-apply-form">
           <h2>Apply</h2>
-          <p class="apply-hint">Your account email must match the email you use below.</p>
+          <p class="apply-hint">Your account email must match the email you use below. Attach a PDF or Word resume (max 5 MB).</p>
           <mat-form-field appearance="outline" class="full">
             <mat-label>Full name</mat-label>
             <input matInput name="applicantName" [(ngModel)]="applicantName" data-cy="portal-apply-name" />
@@ -54,10 +54,21 @@
             <mat-label>Email</mat-label>
             <input matInput type="email" name="applicantEmail" [(ngModel)]="applicantEmail" data-cy="portal-apply-email" />
           </mat-form-field>
-          <mat-form-field appearance="outline" class="full">
-            <mat-label>Resume (file name or link)</mat-label>
-            <input matInput name="resumeNote" [(ngModel)]="resumeNote" data-cy="portal-apply-resume" />
-          </mat-form-field>
+          <div class="resume-field">
+            <span class="resume-label">Resume</span>
+            <input
+              type="file"
+              name="resume"
+              accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              data-cy="portal-apply-resume"
+              (change)="onResumePicked($event)"
+            />
+            @if (resumeFile) {
+              <span class="resume-file-name">{{ resumeFile.name }}</span>
+            } @else {
+              <span class="resume-placeholder">No file selected</span>
+            }
+          </div>
           <button
             mat-flat-button
             color="primary"
