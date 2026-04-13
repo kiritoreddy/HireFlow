@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { Router, UrlTree, provideRouter } from '@angular/router';
 import { hiringOnlyGuard, candidateGuard } from './candidate.guard';
 import { AuthService } from './auth.service';
-import { vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { computed } from '@angular/core';
 

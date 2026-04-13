@@ -1,0 +1,10 @@
+{
+  "id": 1,
+  "title": "Senior Software Engineer",
+  "description": "Build web apps.",
+  "department": "Engineering",
+  "location": "Remote",
+  "status": "Open",
+  "created_at": "2026-01-01T12:00:00Z",
+  "updated_at": "2026-01-01T12:00:00Z"
+}

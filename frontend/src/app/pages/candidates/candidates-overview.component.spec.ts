@@ -3,7 +3,7 @@ import { CandidatesOverviewComponent } from './candidates-overview.component';
 import { JobsApiService } from '../../core/services/jobs-api.service';
 import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
-import { vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Job } from '../../core/models/job.model';
 
 const mockJobs: Job[] = [

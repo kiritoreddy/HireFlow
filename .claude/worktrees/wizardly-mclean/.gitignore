@@ -1,0 +1,58 @@
+# macOS system files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Local editor metadata (optional)
+.cursor/
+
+# Go compiled binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go test binary
+*.test
+
+# Go coverage output
+*.out
+
+# Go build cache / vendor
+/vendor/
+
+# SQLite database files (local dev)
+*.db
+*.db-shm
+*.db-wal
+*.db-bak
+
+# Backend build artifacts
+backend/tmp/
+backend/build-errors.log
+
+# Node modules
+node_modules/
+
+# Angular build output
+dist/
+.angular/
+
+# Environment files (contain secrets)
+.env
+.env.local
+.env.*.local
+
+# IDE specific files
+.vscode/settings.json
+.idea/
+
+# Log files
+*.log
+
+# OS generated files
+Thumbs.db
+ehthumbs.db

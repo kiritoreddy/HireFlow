@@ -1,0 +1,79 @@
+<div class="portal-page">
+  <a mat-button routerLink="/portal/jobs" class="back-link">
+    <mat-icon>arrow_back</mat-icon>
+    Back to open roles
+  </a>
+
+  @if (loading()) {
+    <div class="centered">
+      <mat-progress-spinner mode="indeterminate" diameter="40" />
+    </div>
+  } @else if (notFound() || !job()) {
+    <p>Job not found.</p>
+    <a mat-stroked-button routerLink="/portal/jobs">Return to listings</a>
+  } @else {
+    @let j = job()!;
+    <article data-cy="portal-job-detail">
+      <h1 class="page-title">{{ j.title }}</h1>
+      <p class="meta">{{ j.department || '—' }} · {{ j.location || '—' }} · {{ j.status }}</p>
+      <div class="description">{{ j.description }}</div>
+
+      @if (j.status !== 'Open') {
+        <p class="closed-note">This role is not accepting applications.</p>
+      } @else if (existingApplication(); as existing) {
+        <section class="apply-panel already-applied" data-cy="portal-already-applied">
+          <h2>Already applied</h2>
+          <p class="apply-hint">You have an active application for this role.</p>
+          <dl class="applied-facts">
+            <div>
+              <dt>Status</dt>
+              <dd data-cy="portal-applied-status">{{ existing.stage }}</dd>
+            </div>
+            <div>
+              <dt>Applied on</dt>
+              <dd data-cy="portal-applied-at">
+                @if (existing.appliedAt) {
+                  {{ existing.appliedAt | date: 'medium' }}
+                } @else {
+                  —
+                }
+              </dd>
+            </div>
+          </dl>
+          <a mat-stroked-button routerLink="/portal/applications">View all my applications</a>
+        </section>
+      } @else {
+        <section class="apply-panel" data-cy="portal-apply-form">
+          <h2>Apply</h2>
+          <p class="apply-hint">Your account email must match the email you use below.</p>
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Full name</mat-label>
+            <input matInput name="applicantName" [(ngModel)]="applicantName" data-cy="portal-apply-name" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Email</mat-label>
+            <input matInput type="email" name="applicantEmail" [(ngModel)]="applicantEmail" data-cy="portal-apply-email" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Resume (file name or link)</mat-label>
+            <input matInput name="resumeNote" [(ngModel)]="resumeNote" data-cy="portal-apply-resume" />
+          </mat-form-field>
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+            data-cy="portal-apply-submit"
+            [disabled]="submitting()"
+            (click)="submitApplication()"
+          >
+            @if (submitting()) {
+              Submitting…
+            } @else {
+              Submit application
+            }
+          </button>
+        </section>
+      }
+    </article>
+  }
+</div>

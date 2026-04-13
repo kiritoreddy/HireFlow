@@ -5,7 +5,7 @@ import { CandidatesApiService } from '../../core/services/candidates-api.service
 import { provideRouter } from '@angular/router';
 import { ActivatedRoute } from '@angular/router';
 import { of, throwError } from 'rxjs';
-import { vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { JobCandidate } from '../../core/models/candidate.model';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';

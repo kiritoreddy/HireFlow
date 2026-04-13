@@ -1,0 +1,58 @@
+<div class="portal-page">
+  <header class="page-header">
+    <div class="header-text">
+      <h1 class="page-title" data-cy="portal-jobs-title">Open roles</h1>
+      <p class="subtitle">Browse open positions and apply in one place.</p>
+    </div>
+    <a mat-stroked-button routerLink="/portal/applications" data-cy="portal-my-apps-link">
+      <mat-icon>assignment</mat-icon>
+      My applications
+    </a>
+  </header>
+
+  @if (loading()) {
+    <div class="centered">
+      <mat-progress-spinner mode="indeterminate" diameter="40" />
+    </div>
+  } @else if (loadError()) {
+    <p class="error-text">Could not load jobs. Check that the backend is running and try again.</p>
+    <button mat-flat-button color="primary" type="button" (click)="refresh()">Retry</button>
+  } @else {
+    <div class="toolbar">
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>Search</mat-label>
+        <input
+          matInput
+          data-cy="portal-jobs-search"
+          [(ngModel)]="searchQuery"
+          (ngModelChange)="onSearchChange()"
+          placeholder="Title, department, location..."
+        />
+        <mat-icon matPrefix>search</mat-icon>
+      </mat-form-field>
+    </div>
+
+    @if (filteredJobs.length === 0) {
+      <p class="empty-hint">No open roles match your search.</p>
+    } @else {
+      <ul class="job-cards" data-cy="portal-job-list">
+        @for (job of filteredJobs; track job.id) {
+          <li class="job-card">
+            <div class="job-card-main">
+              <h2 class="job-title">{{ job.title }}</h2>
+              <p class="job-meta">
+                {{ job.department || '—' }} · {{ job.location || '—' }}
+              </p>
+              <p class="job-desc">
+                {{ (job.description || '') | slice: 0 : 220 }}{{ (job.description || '').length > 220 ? '…' : '' }}
+              </p>
+            </div>
+            <a mat-flat-button color="primary" [routerLink]="['/portal/jobs', job.id]" data-cy="portal-view-job">
+              View &amp; apply
+            </a>
+          </li>
+        }
+      </ul>
+    }
+  }
+</div>

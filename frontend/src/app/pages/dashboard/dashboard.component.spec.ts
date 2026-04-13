@@ -3,7 +3,7 @@ import { DashboardComponent } from './dashboard.component';
 import { JobsApiService } from '../../core/services/jobs-api.service';
 import { DashboardApiService } from '../../core/services/dashboard-api.service';
 import { provideRouter } from '@angular/router';
-import { vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { of, throwError } from 'rxjs';
 import { Job } from '../../core/models/job.model';
 

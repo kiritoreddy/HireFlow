@@ -1,0 +1,47 @@
+[
+  {
+    "id": 1,
+    "title": "Senior Software Engineer",
+    "description": "Build web apps.",
+    "department": "Engineering",
+    "location": "Remote",
+    "status": "Open",
+    "created_at": "2026-01-01T12:00:00Z",
+    "updated_at": "2026-01-01T12:00:00Z",
+    "candidateCount": 1,
+    "appliedCount": 1,
+    "interviewCount": 0,
+    "selectedCount": 0,
+    "rejectedCount": 0
+  },
+  {
+    "id": 2,
+    "title": "Product Designer",
+    "description": "Design UX.",
+    "department": "Design",
+    "location": "San Francisco",
+    "status": "Open",
+    "created_at": "2026-01-02T12:00:00Z",
+    "updated_at": "2026-01-02T12:00:00Z",
+    "candidateCount": 0,
+    "appliedCount": 0,
+    "interviewCount": 0,
+    "selectedCount": 0,
+    "rejectedCount": 0
+  },
+  {
+    "id": 3,
+    "title": "Data Analyst",
+    "description": "Analyze data.",
+    "department": "Analytics",
+    "location": "New York",
+    "status": "Closed",
+    "created_at": "2026-01-03T12:00:00Z",
+    "updated_at": "2026-01-03T12:00:00Z",
+    "candidateCount": 0,
+    "appliedCount": 0,
+    "interviewCount": 0,
+    "selectedCount": 0,
+    "rejectedCount": 0
+  }
+]
