@@ -12,8 +12,8 @@ import (
 	"backend/models"
 	"backend/utils"
 
+	"github.com/glebarez/sqlite"
 	"github.com/gorilla/mux"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
