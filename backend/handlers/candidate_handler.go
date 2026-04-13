@@ -1,491 +1,307 @@
-package handlers_test
+package handlers
 
 import (
-	"bytes"
 	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"strconv"
-	"testing"
+	"strings"
+	"time"
 
-	"backend/handlers"
 	"backend/middleware"
 	"backend/models"
 
 	"github.com/gorilla/mux"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
-// alias so tests can use CandidateHandler directly
-type CandidateHandler = handlers.CandidateHandler
+type CandidateHandler struct {
+	DB *gorm.DB
+}
 
-// ─── Test DB setup ──────────────────────────────────────────────────────────
+type applyWithCandidateRequest struct {
+	JobID      uint   `json:"job_id"`
+	Name       string `json:"name"`
+	Email      string `json:"email"`
+	ResumePath string `json:"resume_path"`
+}
 
-func setupTestDB(t *testing.T) *gorm.DB {
-	t.Helper()
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Silent),
-	})
+type stageUpdateRequest struct {
+	Stage string `json:"stage"`
+}
+
+type myApplicationListItem struct {
+	ID         string `json:"id"`
+	JobID      uint   `json:"job_id"`
+	JobTitle   string `json:"job_title"`
+	Department string `json:"department,omitempty"`
+	Stage      string `json:"stage"`
+	RawStage   string `json:"raw_status,omitempty"`
+	AppliedAt  string `json:"applied_at,omitempty"`
+}
+
+var allowedStages = map[string]bool{
+	"APPLIED": true, "INTERVIEW": true, "SELECTED": true, "REJECTED": true, "WITHDRAWN": true,
+}
+
+func normalizeStageInput(s string) (string, bool) {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return "", false
+	}
+	upper := strings.ToUpper(s)
+	if allowedStages[upper] {
+		return upper, true
+	}
+	return "", false
+}
+
+func statusToCandidatePortalStage(status string) string {
+	switch strings.ToUpper(strings.TrimSpace(status)) {
+	case "APPLIED":
+		return "Applied"
+	case "INTERVIEW":
+		return "Interview"
+	case "SELECTED":
+		return "Selected"
+	case "REJECTED":
+		return "Rejected"
+	case "WITHDRAWN":
+		return "Withdrawn"
+	default:
+		return "Applied"
+	}
+}
+
+func (h *CandidateHandler) ApplyWithCandidate(w http.ResponseWriter, r *http.Request) {
+	var req applyWithCandidateRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	claims, ok := middleware.JWTClaimsFromRequest(r)
+	if !ok || claims == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if claims.Role != "candidate" {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	req.Email = claims.Email
+
+	if req.JobID == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "job_id is required"})
+		return
+	}
+
+	var job models.Job
+	if err := h.DB.First(&job, req.JobID).Error; err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Job not found"})
+		return
+	}
+
+	email := strings.ToLower(strings.TrimSpace(req.Email))
+
+	var cand models.Candidate
+	err := h.DB.Where("LOWER(email) = ?", email).First(&cand).Error
+
+	if err == gorm.ErrRecordNotFound {
+		cand = models.Candidate{
+			Name:       strings.TrimSpace(req.Name),
+			Email:      email,
+			ResumePath: strings.TrimSpace(req.ResumePath),
+		}
+		if err := h.DB.Create(&cand).Error; err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Failed to create candidate"})
+			return
+		}
+	} else if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to look up candidate"})
+		return
+	}
+
+	var activeApp models.Application
+	dupQ := h.DB.Where("candidate_id = ? AND job_id = ? AND UPPER(TRIM(status)) <> ?", cand.ID, req.JobID, "WITHDRAWN")
+	if err := dupQ.First(&activeApp).Error; err == nil {
+		w.WriteHeader(http.StatusConflict)
+		json.NewEncoder(w).Encode(map[string]string{"error": "You have already applied for this job"})
+		return
+	} else if err != gorm.ErrRecordNotFound {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to check existing application"})
+		return
+	}
+
+	app := models.Application{
+		CandidateID: cand.ID,
+		JobID:       req.JobID,
+		Status:      "APPLIED",
+	}
+
+	if err := h.DB.Create(&app).Error; err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to create application"})
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(app)
+}
+
+func (h *CandidateHandler) ListApplicationsByJob(w http.ResponseWriter, r *http.Request) {
+	jobIDStr := mux.Vars(r)["jobId"]
+	jobID, err := strconv.ParseUint(jobIDStr, 10, 32)
 	if err != nil {
-		t.Fatalf("failed to open test DB: %v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
-	if err := db.AutoMigrate(&models.Candidate{}, &models.Job{}, &models.Application{}); err != nil {
-		t.Fatalf("failed to migrate: %v", err)
-	}
-	return db
+
+	var apps []models.Application
+	h.DB.Preload("Candidate").Where("job_id = ?", uint(jobID)).Find(&apps)
+
+	json.NewEncoder(w).Encode(apps)
 }
 
-// ─── Fake JWT helper ─────────────────────────────────────────────────────────
-// Injects claims directly into the request context the same way the real
-// middleware does, so tests never need a real JWT token or secret.
+func (h *CandidateHandler) UpdateApplicationStage(w http.ResponseWriter, r *http.Request) {
+	idStr := mux.Vars(r)["id"]
+	appID, _ := strconv.Atoi(idStr)
 
-func withClaims(r *http.Request, role, email string) *http.Request {
-	claims := &middleware.Claims{
-		Email: email,
-		Role:  role,
+	var body stageUpdateRequest
+	json.NewDecoder(r.Body).Decode(&body)
+
+	stage, ok := normalizeStageInput(body.Stage)
+	if !ok {
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
-	ctx := middleware.ContextWithClaims(r.Context(), claims)
-	return r.WithContext(ctx)
+
+	var app models.Application
+	if err := h.DB.First(&app, appID).Error; err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	app.Status = stage
+	h.DB.Save(&app)
+
+	json.NewEncoder(w).Encode(app)
 }
 
-// ─── Seed helpers ────────────────────────────────────────────────────────────
-
-func seedJob(t *testing.T, db *gorm.DB) models.Job {
-	t.Helper()
-	job := models.Job{Title: "Test Engineer", Department: "QA", Status: "Open"}
-	if err := db.Create(&job).Error; err != nil {
-		t.Fatalf("seed job: %v", err)
+func (h *CandidateHandler) ListMyApplications(w http.ResponseWriter, r *http.Request) {
+	claims, ok := middleware.JWTClaimsFromRequest(r)
+	if !ok || claims == nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
 	}
-	return job
+
+	email := strings.ToLower(strings.TrimSpace(claims.Email))
+
+	var cand models.Candidate
+	if err := h.DB.Where("LOWER(email) = ?", email).First(&cand).Error; err != nil {
+		json.NewEncoder(w).Encode([]myApplicationListItem{})
+		return
+	}
+
+	var apps []models.Application
+	h.DB.Preload("Job").Where("candidate_id = ?", cand.ID).Find(&apps)
+
+	var out []myApplicationListItem
+	for _, a := range apps {
+		out = append(out, myApplicationListItem{
+			ID:         strconv.Itoa(int(a.ID)),
+			JobID:      a.JobID,
+			JobTitle:   a.Job.Title,
+			Department: a.Job.Department,
+			Stage:      statusToCandidatePortalStage(a.Status),
+			RawStage:   a.Status,
+			AppliedAt:  a.CreatedAt.Format(time.RFC3339),
+		})
+	}
+
+	if out == nil {
+		out = []myApplicationListItem{}
+	}
+
+	json.NewEncoder(w).Encode(out)
 }
 
-func seedCandidate(t *testing.T, db *gorm.DB, email string) models.Candidate {
-	t.Helper()
-	cand := models.Candidate{Name: "Test User", Email: email}
-	if err := db.Create(&cand).Error; err != nil {
-		t.Fatalf("seed candidate: %v", err)
+func (h *CandidateHandler) WithdrawApplication(w http.ResponseWriter, r *http.Request) {
+	claims, ok := middleware.JWTClaimsFromRequest(r)
+	if !ok || claims == nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
 	}
-	return cand
+
+	idStr := mux.Vars(r)["id"]
+	appID, _ := strconv.Atoi(idStr)
+
+	email := strings.ToLower(strings.TrimSpace(claims.Email))
+
+	var cand models.Candidate
+	h.DB.Where("LOWER(email) = ?", email).First(&cand)
+
+	var app models.Application
+	if err := h.DB.First(&app, appID).Error; err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	if app.CandidateID != cand.ID {
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+
+	app.Status = "WITHDRAWN"
+	h.DB.Save(&app)
+
+	json.NewEncoder(w).Encode(app)
 }
 
-func seedApplication(t *testing.T, db *gorm.DB, candID, jobID uint, status string) models.Application {
-	t.Helper()
-	app := models.Application{CandidateID: candID, JobID: jobID, Status: status}
-	if err := db.Create(&app).Error; err != nil {
-		t.Fatalf("seed application: %v", err)
-	}
-	return app
-}
-
-// ─── ApplyWithCandidate ───────────────────────────────────────────────────────
-
-func TestApplyWithCandidate_Unauthorized(t *testing.T) {
-	db := setupTestDB(t)
-	h := &CandidateHandler{DB: db}
-
-	body, _ := json.Marshal(map[string]interface{}{"job_id": 1})
-	req := httptest.NewRequest(http.MethodPost, "/api/candidate/apply", bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-	rr := httptest.NewRecorder()
-
-	h.ApplyWithCandidate(rr, req)
-
-	if rr.Code != http.StatusUnauthorized {
-		t.Errorf("expected 401, got %d", rr.Code)
-	}
-}
-
-func TestApplyWithCandidate_ForbiddenForNonCandidate(t *testing.T) {
-	db := setupTestDB(t)
-	h := &CandidateHandler{DB: db}
-
-	body, _ := json.Marshal(map[string]interface{}{"job_id": 1})
-	req := httptest.NewRequest(http.MethodPost, "/api/candidate/apply", bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-	req = withClaims(req, "hiring_manager", "hm@example.com")
-	rr := httptest.NewRecorder()
-
-	h.ApplyWithCandidate(rr, req)
-
-	if rr.Code != http.StatusForbidden {
-		t.Errorf("expected 403 for hiring_manager, got %d", rr.Code)
-	}
-}
-
-func TestApplyWithCandidate_MissingJobID(t *testing.T) {
-	db := setupTestDB(t)
-	h := &CandidateHandler{DB: db}
-
-	body, _ := json.Marshal(map[string]interface{}{"job_id": 0})
-	req := httptest.NewRequest(http.MethodPost, "/api/candidate/apply", bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-	req = withClaims(req, "candidate", "c@example.com")
-	rr := httptest.NewRecorder()
-
-	h.ApplyWithCandidate(rr, req)
-
-	if rr.Code != http.StatusBadRequest {
-		t.Errorf("expected 400, got %d", rr.Code)
-	}
-}
-
-func TestApplyWithCandidate_JobNotFound(t *testing.T) {
-	db := setupTestDB(t)
-	h := &CandidateHandler{DB: db}
-
-	body, _ := json.Marshal(map[string]interface{}{"job_id": 9999})
-	req := httptest.NewRequest(http.MethodPost, "/api/candidate/apply", bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-	req = withClaims(req, "candidate", "c@example.com")
-	rr := httptest.NewRecorder()
-
-	h.ApplyWithCandidate(rr, req)
-
-	if rr.Code != http.StatusNotFound {
-		t.Errorf("expected 404, got %d", rr.Code)
-	}
-}
-
-func TestApplyWithCandidate_Success(t *testing.T) {
-	db := setupTestDB(t)
-	h := &CandidateHandler{DB: db}
-	job := seedJob(t, db)
-
-	body, _ := json.Marshal(map[string]interface{}{
-		"job_id": job.ID,
-		"name":   "Akki",
-	})
-	req := httptest.NewRequest(http.MethodPost, "/api/candidate/apply", bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-	req = withClaims(req, "candidate", "akki@example.com")
-	rr := httptest.NewRecorder()
-
-	h.ApplyWithCandidate(rr, req)
-
-	if rr.Code != http.StatusCreated {
-		t.Errorf("expected 201, got %d — body: %s", rr.Code, rr.Body.String())
-	}
-}
-
-func TestApplyWithCandidate_DuplicateBlocked(t *testing.T) {
-	db := setupTestDB(t)
-	h := &CandidateHandler{DB: db}
-	job := seedJob(t, db)
-	cand := seedCandidate(t, db, "dup@example.com")
-	seedApplication(t, db, cand.ID, job.ID, "APPLIED")
-
-	body, _ := json.Marshal(map[string]interface{}{"job_id": job.ID})
-	req := httptest.NewRequest(http.MethodPost, "/api/candidate/apply", bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-	req = withClaims(req, "candidate", "dup@example.com")
-	rr := httptest.NewRecorder()
-
-	h.ApplyWithCandidate(rr, req)
-
-	if rr.Code != http.StatusConflict {
-		t.Errorf("expected 409 conflict for duplicate, got %d", rr.Code)
-	}
-}
-
-func TestApplyWithCandidate_AllowsReapplyAfterWithdraw(t *testing.T) {
-	db := setupTestDB(t)
-	h := &CandidateHandler{DB: db}
-	job := seedJob(t, db)
-	cand := seedCandidate(t, db, "retry@example.com")
-	seedApplication(t, db, cand.ID, job.ID, "WITHDRAWN")
-
-	body, _ := json.Marshal(map[string]interface{}{"job_id": job.ID})
-	req := httptest.NewRequest(http.MethodPost, "/api/candidate/apply", bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-	req = withClaims(req, "candidate", "retry@example.com")
-	rr := httptest.NewRecorder()
-
-	h.ApplyWithCandidate(rr, req)
-
-	if rr.Code != http.StatusCreated {
-		t.Errorf("expected 201 for re-apply after withdraw, got %d", rr.Code)
-	}
-}
-
-// ─── ListMyApplications ───────────────────────────────────────────────────────
-
-func TestListMyApplications_Unauthorized(t *testing.T) {
-	db := setupTestDB(t)
-	h := &CandidateHandler{DB: db}
-
-	req := httptest.NewRequest(http.MethodGet, "/api/candidate/applications", nil)
-	rr := httptest.NewRecorder()
-
-	h.ListMyApplications(rr, req)
-
-	if rr.Code != http.StatusUnauthorized {
-		t.Errorf("expected 401, got %d", rr.Code)
-	}
-}
-
-func TestListMyApplications_ReturnsEmptyForUnknownCandidate(t *testing.T) {
-	db := setupTestDB(t)
-	h := &CandidateHandler{DB: db}
-
-	req := httptest.NewRequest(http.MethodGet, "/api/candidate/applications", nil)
-	req = withClaims(req, "candidate", "nobody@example.com")
-	rr := httptest.NewRecorder()
-
-	h.ListMyApplications(rr, req)
-
-	if rr.Code != http.StatusOK {
-		t.Errorf("expected 200, got %d", rr.Code)
-	}
-	var result []interface{}
-	json.NewDecoder(rr.Body).Decode(&result)
-	if len(result) != 0 {
-		t.Errorf("expected empty list, got %d items", len(result))
-	}
-}
-
-func TestListMyApplications_ReturnsOnlyOwnApplications(t *testing.T) {
-	db := setupTestDB(t)
-	h := &CandidateHandler{DB: db}
-	job := seedJob(t, db)
-	cand := seedCandidate(t, db, "mine@example.com")
-	other := seedCandidate(t, db, "other@example.com")
-	seedApplication(t, db, cand.ID, job.ID, "APPLIED")
-	seedApplication(t, db, other.ID, job.ID, "APPLIED") // should NOT appear
-
-	req := httptest.NewRequest(http.MethodGet, "/api/candidate/applications", nil)
-	req = withClaims(req, "candidate", "mine@example.com")
-	rr := httptest.NewRecorder()
-
-	h.ListMyApplications(rr, req)
-
-	if rr.Code != http.StatusOK {
-		t.Errorf("expected 200, got %d", rr.Code)
-	}
-	var result []map[string]interface{}
-	json.NewDecoder(rr.Body).Decode(&result)
-	if len(result) != 1 {
-		t.Errorf("expected 1 application, got %d", len(result))
-	}
-}
-
-// ─── WithdrawApplication ──────────────────────────────────────────────────────
-
-func TestWithdrawApplication_Unauthorized(t *testing.T) {
-	db := setupTestDB(t)
-	h := &CandidateHandler{DB: db}
-
-	req := httptest.NewRequest(http.MethodPatch, "/api/candidate/applications/1/withdraw", nil)
-	rr := httptest.NewRecorder()
-
-	h.WithdrawApplication(rr, req)
-
-	if rr.Code != http.StatusUnauthorized {
-		t.Errorf("expected 401, got %d", rr.Code)
-	}
-}
-
-func TestWithdrawApplication_NotFound(t *testing.T) {
-	db := setupTestDB(t)
-	h := &CandidateHandler{DB: db}
-
-	req := httptest.NewRequest(http.MethodPatch, "/api/candidate/applications/9999/withdraw", nil)
-	req = withClaims(req, "candidate", "c@example.com")
-
-	router := mux.NewRouter()
-	router.HandleFunc("/api/candidate/applications/{id}/withdraw", h.WithdrawApplication)
-	rr := httptest.NewRecorder()
-	router.ServeHTTP(rr, req)
-
-	if rr.Code != http.StatusNotFound {
-		t.Errorf("expected 404, got %d", rr.Code)
-	}
-}
-
-func TestWithdrawApplication_ForbiddenForOtherCandidate(t *testing.T) {
-	db := setupTestDB(t)
-	h := &CandidateHandler{DB: db}
-	job := seedJob(t, db)
-	owner := seedCandidate(t, db, "owner@example.com")
-	app := seedApplication(t, db, owner.ID, job.ID, "APPLIED")
-	_ = seedCandidate(t, db, "attacker@example.com")
-
-	url := "/api/candidate/applications/" + itoa(app.ID) + "/withdraw"
-	req := httptest.NewRequest(http.MethodPatch, url, nil)
-	req = withClaims(req, "candidate", "attacker@example.com")
-
-	router := mux.NewRouter()
-	router.HandleFunc("/api/candidate/applications/{id}/withdraw", h.WithdrawApplication)
-	rr := httptest.NewRecorder()
-	router.ServeHTTP(rr, req)
-
-	if rr.Code != http.StatusForbidden {
-		t.Errorf("expected 403, got %d", rr.Code)
-	}
-}
-
-func TestWithdrawApplication_Success(t *testing.T) {
-	db := setupTestDB(t)
-	h := &CandidateHandler{DB: db}
-	job := seedJob(t, db)
-	cand := seedCandidate(t, db, "me@example.com")
-	app := seedApplication(t, db, cand.ID, job.ID, "APPLIED")
-
-	url := "/api/candidate/applications/" + itoa(app.ID) + "/withdraw"
-	req := httptest.NewRequest(http.MethodPatch, url, nil)
-	req = withClaims(req, "candidate", "me@example.com")
-
-	router := mux.NewRouter()
-	router.HandleFunc("/api/candidate/applications/{id}/withdraw", h.WithdrawApplication)
-	rr := httptest.NewRecorder()
-	router.ServeHTTP(rr, req)
-
-	if rr.Code != http.StatusOK {
-		t.Errorf("expected 200, got %d — body: %s", rr.Code, rr.Body.String())
+func (h *CandidateHandler) DeleteApplication(w http.ResponseWriter, r *http.Request) {
+	claims, ok := middleware.JWTClaimsFromRequest(r)
+	if !ok || claims == nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
 	}
 
-	// Verify status changed in DB
-	var updated models.Application
-	db.First(&updated, app.ID)
-	if updated.Status != "WITHDRAWN" {
-		t.Errorf("expected status WITHDRAWN, got %s", updated.Status)
-	}
-}
-
-// ─── DeleteApplication ────────────────────────────────────────────────────────
-
-func TestDeleteApplication_Unauthorized(t *testing.T) {
-	db := setupTestDB(t)
-	h := &CandidateHandler{DB: db}
-
-	req := httptest.NewRequest(http.MethodDelete, "/api/candidate/applications/1", nil)
-	rr := httptest.NewRecorder()
-	h.DeleteApplication(rr, req)
-
-	if rr.Code != http.StatusUnauthorized {
-		t.Errorf("expected 401, got %d", rr.Code)
-	}
-}
-
-func TestDeleteApplication_CandidateCanDeleteOwn(t *testing.T) {
-	db := setupTestDB(t)
-	h := &CandidateHandler{DB: db}
-	job := seedJob(t, db)
-	cand := seedCandidate(t, db, "del@example.com")
-	app := seedApplication(t, db, cand.ID, job.ID, "APPLIED")
-
-	url := "/api/candidate/applications/" + itoa(app.ID)
-	req := httptest.NewRequest(http.MethodDelete, url, nil)
-	req = withClaims(req, "candidate", "del@example.com")
-
-	router := mux.NewRouter()
-	router.HandleFunc("/api/candidate/applications/{id}", h.DeleteApplication)
-	rr := httptest.NewRecorder()
-	router.ServeHTTP(rr, req)
-
-	if rr.Code != http.StatusNoContent {
-		t.Errorf("expected 204, got %d", rr.Code)
-	}
-}
-
-func TestDeleteApplication_CandidateCannotDeleteOthers(t *testing.T) {
-	db := setupTestDB(t)
-	h := &CandidateHandler{DB: db}
-	job := seedJob(t, db)
-	owner := seedCandidate(t, db, "owner2@example.com")
-	app := seedApplication(t, db, owner.ID, job.ID, "APPLIED")
-	_ = seedCandidate(t, db, "bad@example.com")
-
-	url := "/api/candidate/applications/" + itoa(app.ID)
-	req := httptest.NewRequest(http.MethodDelete, url, nil)
-	req = withClaims(req, "candidate", "bad@example.com")
-
-	router := mux.NewRouter()
-	router.HandleFunc("/api/candidate/applications/{id}", h.DeleteApplication)
-	rr := httptest.NewRecorder()
-	router.ServeHTTP(rr, req)
-
-	if rr.Code != http.StatusForbidden {
-		t.Errorf("expected 403, got %d", rr.Code)
-	}
-}
-
-func TestDeleteApplication_AdminCanDeleteAny(t *testing.T) {
-	db := setupTestDB(t)
-	h := &CandidateHandler{DB: db}
-	job := seedJob(t, db)
-	cand := seedCandidate(t, db, "someone@example.com")
-	app := seedApplication(t, db, cand.ID, job.ID, "APPLIED")
-
-	url := "/api/candidate/applications/" + itoa(app.ID)
-	req := httptest.NewRequest(http.MethodDelete, url, nil)
-	req = withClaims(req, "admin", "admin@example.com")
-
-	router := mux.NewRouter()
-	router.HandleFunc("/api/candidate/applications/{id}", h.DeleteApplication)
-	rr := httptest.NewRecorder()
-	router.ServeHTTP(rr, req)
-
-	if rr.Code != http.StatusNoContent {
-		t.Errorf("expected 204 for admin delete, got %d", rr.Code)
-	}
-}
-
-// ─── UpdateApplicationStage ───────────────────────────────────────────────────
-
-func TestUpdateApplicationStage_InvalidStage(t *testing.T) {
-	db := setupTestDB(t)
-	h := &CandidateHandler{DB: db}
-	job := seedJob(t, db)
-	cand := seedCandidate(t, db, "s@example.com")
-	app := seedApplication(t, db, cand.ID, job.ID, "APPLIED")
-
-	body, _ := json.Marshal(map[string]string{"stage": "NONSENSE"})
-	url := "/api/candidate/applications/" + itoa(app.ID) + "/stage"
-	req := httptest.NewRequest(http.MethodPatch, url, bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-
-	router := mux.NewRouter()
-	router.HandleFunc("/api/candidate/applications/{id}/stage", h.UpdateApplicationStage)
-	rr := httptest.NewRecorder()
-	router.ServeHTTP(rr, req)
-
-	if rr.Code != http.StatusBadRequest {
-		t.Errorf("expected 400 for invalid stage, got %d", rr.Code)
-	}
-}
-
-func TestUpdateApplicationStage_Success(t *testing.T) {
-	db := setupTestDB(t)
-	h := &CandidateHandler{DB: db}
-	job := seedJob(t, db)
-	cand := seedCandidate(t, db, "stage@example.com")
-	app := seedApplication(t, db, cand.ID, job.ID, "APPLIED")
-
-	body, _ := json.Marshal(map[string]string{"stage": "INTERVIEW"})
-	url := "/api/candidate/applications/" + itoa(app.ID) + "/stage"
-	req := httptest.NewRequest(http.MethodPatch, url, bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-
-	router := mux.NewRouter()
-	router.HandleFunc("/api/candidate/applications/{id}/stage", h.UpdateApplicationStage)
-	rr := httptest.NewRecorder()
-	router.ServeHTTP(rr, req)
-
-	if rr.Code != http.StatusOK {
-		t.Errorf("expected 200, got %d", rr.Code)
+	idStr := mux.Vars(r)["id"]
+	appID, err := strconv.Atoi(idStr)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 
-	var updated models.Application
-	db.First(&updated, app.ID)
-	if updated.Status != "INTERVIEW" {
-		t.Errorf("expected INTERVIEW, got %s", updated.Status)
+	var app models.Application
+	if err := h.DB.First(&app, appID).Error; err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
 	}
-}
 
-// ─── Utility ─────────────────────────────────────────────────────────────────
+	if claims.Role == "candidate" {
+		email := strings.ToLower(strings.TrimSpace(claims.Email))
+		var cand models.Candidate
+		if err := h.DB.Where("LOWER(email) = ?", email).First(&cand).Error; err != nil {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+		if app.CandidateID != cand.ID {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+	}
 
-func itoa(id uint) string {
-	return strconv.Itoa(int(id))
+	if err := h.DB.Delete(&app).Error; err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

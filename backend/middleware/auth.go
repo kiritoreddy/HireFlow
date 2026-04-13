@@ -101,3 +101,8 @@ func RequireRole(roles ...string) func(http.HandlerFunc) http.HandlerFunc {
 		}
 	}
 }
+
+// ContextWithClaims injects claims into a context — used by tests only
+func ContextWithClaims(ctx context.Context, claims *utils.JWTClaims) context.Context {
+	return context.WithValue(ctx, claimsKey, claims)
+}
