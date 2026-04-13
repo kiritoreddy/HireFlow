@@ -27,7 +27,8 @@ func main() {
 
 	// Seed default users if they don't exist
 	seeder.SeedAdmin(db)
-	seeder.SeedCandidate(db) // ← ADDED: Test candidate for E2E testing
+	seeder.SeedCandidate(db)
+	seeder.SeedHiringManager(db) // ← ADDED: Test hiring manager for E2E testing
 
 	// Setup routes with CORS middleware
 	handler := routes.SetupRoutes(db)
