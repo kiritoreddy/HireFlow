@@ -1,9 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { DashboardComponent } from './dashboard.component';
 import { JobsApiService } from '../../core/services/jobs-api.service';
+import { DashboardApiService } from '../../core/services/dashboard-api.service';
 import { provideRouter } from '@angular/router';
-import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { vi } from 'vitest';
 import { of, throwError } from 'rxjs';
 import { Job } from '../../core/models/job.model';
@@ -17,9 +16,24 @@ const mockJobs: Job[] = [
 describe('DashboardComponent', () => {
   let component: DashboardComponent;
   let jobsApiSpy: { getJobs: ReturnType<typeof vi.fn> };
+  let dashboardApiSpy: { getStats: ReturnType<typeof vi.fn> };
+
+  const mockStats = {
+    totalJobs: 3,
+    openJobs: 2,
+    closedJobs: 1,
+    totalCandidates: 5,
+    totalUsers: 7,
+    departmentSummary: [
+      { department: 'Engineering', openCount: 1, closedCount: 0 },
+      { department: 'Product', openCount: 1, closedCount: 0 },
+      { department: 'Design', openCount: 0, closedCount: 1 },
+    ],
+  };
 
   beforeEach(async () => {
     jobsApiSpy = { getJobs: vi.fn().mockReturnValue(of(mockJobs)) };
+    dashboardApiSpy = { getStats: vi.fn().mockReturnValue(of(mockStats)) };
 
     TestBed.overrideComponent(DashboardComponent, { set: { template: '' } });
 
@@ -27,6 +41,7 @@ describe('DashboardComponent', () => {
       imports: [DashboardComponent],
       providers: [
         provideRouter([]),
+        { provide: DashboardApiService, useValue: dashboardApiSpy },
         { provide: JobsApiService, useValue: jobsApiSpy },
       ],
     }).compileComponents();
@@ -73,7 +88,19 @@ describe('DashboardComponent', () => {
     expect(component.loading()).toBe(false);
   });
 
-  it('should set loading to false even on API error', () => {
+  it('should fall back to jobs API when stats endpoint fails', () => {
+    dashboardApiSpy.getStats.mockReturnValue(throwError(() => new Error('Stats endpoint down')));
+    component.ngOnInit();
+    expect(jobsApiSpy.getJobs).toHaveBeenCalledTimes(1);
+    expect(component.totalJobs).toBe(3);
+    expect(component.openJobs).toBe(2);
+    expect(component.closedJobs).toBe(1);
+    expect(component.totalCandidates).toBe(5);
+    expect(component.loading()).toBe(false);
+  });
+
+  it('should set loading to false even when both APIs fail', () => {
+    dashboardApiSpy.getStats.mockReturnValue(throwError(() => new Error('Stats endpoint down')));
     jobsApiSpy.getJobs.mockReturnValue(throwError(() => new Error('Network error')));
     component.ngOnInit();
     expect(component.loading()).toBe(false);
