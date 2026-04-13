@@ -40,21 +40,37 @@ func SetupRoutes(db *gorm.DB) http.Handler {
     // Job endpoints
     jobHandler := &handlers.JobHandler{DB: db}
 
-    // Public job viewing (auth required, any role)
+    // Job viewing (auth required, any role)
     router.HandleFunc("/jobs", middleware.RequireAuth(jobHandler.GetAllJobs)).Methods("GET")
     router.HandleFunc("/jobs/{id}", middleware.RequireAuth(jobHandler.GetJobByID)).Methods("GET")
 
-    // Protected job management (hiring_manager or admin only)
+    // Job management (hiring_manager or admin only)
     router.HandleFunc("/jobs", middleware.RequireAuth(middleware.RequireRole("hiring_manager", "admin")(jobHandler.CreateJob))).Methods("POST")
     router.HandleFunc("/jobs/{id}", middleware.RequireAuth(middleware.RequireRole("hiring_manager", "admin")(jobHandler.UpdateJob))).Methods("PUT")
     router.HandleFunc("/jobs/{id}", middleware.RequireAuth(middleware.RequireRole("hiring_manager", "admin")(jobHandler.DeleteJob))).Methods("DELETE")
 
     // ---------------------------
     // Candidate API endpoints (BE-2)
+    // Updated to match BE-2's current method names
     // ---------------------------
     candidateHandler := &handlers.CandidateHandler{DB: db}
-    router.HandleFunc("/api/candidate/apply", candidateHandler.ApplyToJob).Methods("POST")
+
+    // Apply to job (creates or reuses candidate by email)
+    router.HandleFunc("/api/candidate/apply", candidateHandler.ApplyWithCandidate).Methods("POST")
+
+    // List applications for a specific job (hiring pipeline view)
+    router.HandleFunc("/api/jobs/{jobId}/applications", candidateHandler.ListApplicationsByJob).Methods("GET")
+
+    // Update application stage (pipeline stage movement)
+    router.HandleFunc("/api/applications/{id}/stage", candidateHandler.UpdateApplicationStage).Methods("PATCH")
+
+    // Legacy: list applications by candidate_id query param
     router.HandleFunc("/api/candidate/applications", candidateHandler.GetApplications).Methods("GET")
+
+    // Candidate portal: list my applications (JWT required)
+    router.HandleFunc("/api/candidate/my-applications", candidateHandler.ListMyApplications).Methods("GET")
+
+    // Candidate portal: withdraw application (JWT required, must own application)
     router.HandleFunc("/api/candidate/applications/{id}/withdraw", candidateHandler.WithdrawApplication).Methods("PATCH")
 
     // Apply CORS middleware

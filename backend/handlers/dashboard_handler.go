@@ -17,9 +17,9 @@ type DashboardHandler struct {
 // DepartmentSummary represents job counts per department
 // Used in dashboard stats to show hiring activity by department
 type DepartmentSummary struct {
-    Department string `json:"department"`
-    OpenCount  int64  `json:"openCount"`
-    ClosedCount int64 `json:"closedCount"`
+    Department  string `json:"department"`
+    OpenCount   int64  `json:"openCount"`
+    ClosedCount int64  `json:"closedCount"`
 }
 
 // DashboardStatsResponse is the complete dashboard stats response shape
@@ -96,14 +96,16 @@ func (h *DashboardHandler) GetDashboardStats(w http.ResponseWriter, r *http.Requ
         Scan(&rows)
 
     // Aggregate department counts into map then convert to slice
+    // Uses tagged switch on row.Status for cleaner code (QF1003)
     deptMap := make(map[string]*DepartmentSummary)
     for _, row := range rows {
         if _, exists := deptMap[row.Department]; !exists {
             deptMap[row.Department] = &DepartmentSummary{Department: row.Department}
         }
-        if row.Status == "Open" {
+        switch row.Status {
+        case "Open":
             deptMap[row.Department].OpenCount = row.Count
-        } else if row.Status == "Closed" {
+        case "Closed":
             deptMap[row.Department].ClosedCount = row.Count
         }
     }
