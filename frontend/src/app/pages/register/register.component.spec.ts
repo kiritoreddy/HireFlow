@@ -4,7 +4,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { Router } from '@angular/router';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { vi } from 'vitest';
 
 describe('RegisterComponent', () => {
   let component: RegisterComponent;
