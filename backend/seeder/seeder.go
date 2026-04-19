@@ -43,6 +43,7 @@ func SeedAdmin(db *gorm.DB) {
 		Email:    DefaultAdminEmail,
 		Role:     "admin",
 		IsActive: true,
+		Provider: "email", // Sprint 4: explicitly set provider for seed users
 	}
 
 	if err := admin.HashPassword(DefaultAdminPassword); err != nil {
@@ -77,6 +78,7 @@ func SeedCandidate(db *gorm.DB) {
 		Email:    DefaultCandidateEmail,
 		Role:     "candidate",
 		IsActive: true,
+		Provider: "email", // Sprint 4: explicitly set provider for seed users
 	}
 
 	if err := candidate.HashPassword(DefaultCandidatePassword); err != nil {
@@ -111,6 +113,7 @@ func SeedHiringManager(db *gorm.DB) {
 		Email:    DefaultHiringManagerEmail,
 		Role:     "hiring_manager",
 		IsActive: true,
+		Provider: "email", // Sprint 4: explicitly set provider for seed users
 	}
 
 	if err := manager.HashPassword(DefaultHiringManagerPassword); err != nil {
@@ -146,6 +149,7 @@ func SeedInterviewer(db *gorm.DB) {
 		Email:    DefaultInterviewerEmail,
 		Role:     "interviewer",
 		IsActive: true,
+		Provider: "email", // Sprint 4: explicitly set provider for seed users
 	}
 
 	if err := interviewer.HashPassword(DefaultInterviewerPassword); err != nil {
