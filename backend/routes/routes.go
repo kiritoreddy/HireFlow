@@ -56,26 +56,27 @@ func SetupRoutes(db *gorm.DB) http.Handler {
 
 	// ---------------------------
 	// Candidate API endpoints (BE-2)
+	// Updated Sprint 4: Removed GetApplications (deleted by BE2), added DeleteApplication
 	// ---------------------------
 	candidateHandler := &handlers.CandidateHandler{DB: db}
 
-	// Apply to job (creates or reuses candidate by email)
+	// Apply to job (candidate only - creates or reuses candidate by email)
 	router.HandleFunc("/api/candidate/apply", candidateHandler.ApplyWithCandidate).Methods("POST")
 
-	// List applications for a specific job (hiring pipeline view)
+	// List applications for a specific job (hiring pipeline view - hiring_manager/admin)
 	router.HandleFunc("/api/jobs/{jobId}/applications", candidateHandler.ListApplicationsByJob).Methods("GET")
 
-	// Update application stage (pipeline stage movement)
+	// Update application stage (hiring_manager/admin only)
 	router.HandleFunc("/api/applications/{id}/stage", candidateHandler.UpdateApplicationStage).Methods("PATCH")
 
-	// Legacy: list applications by candidate_id query param
-	router.HandleFunc("/api/candidate/applications", candidateHandler.GetApplications).Methods("GET")
-
-	// Candidate portal: list my applications (JWT required)
+	// Candidate portal: list my applications (JWT required - candidate only)
 	router.HandleFunc("/api/candidate/my-applications", candidateHandler.ListMyApplications).Methods("GET")
 
 	// Candidate portal: withdraw application (JWT required, must own application)
 	router.HandleFunc("/api/candidate/applications/{id}/withdraw", candidateHandler.WithdrawApplication).Methods("PATCH")
+
+	// Delete application (candidate owns it or admin)
+	router.HandleFunc("/api/candidate/applications/{id}", candidateHandler.DeleteApplication).Methods("DELETE")
 
 	// Apply CORS middleware
 	corsHandler := middleware.SetupCORS()

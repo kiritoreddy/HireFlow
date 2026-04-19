@@ -199,31 +199,38 @@ func TestGoogleAuth_ExistingUserMerge(t *testing.T) {
 func TestGoogleAuth_DeactivatedUserBlocked(t *testing.T) {
 	db := setupTestDB(t)
 
-	// Create deactivated user
+	// First create the user as active
 	deactivatedUser := models.User{
 		Name:      "Deactivated User",
 		Email:     "deactivated@example.com",
 		Role:      "candidate",
-		IsActive:  false, // Deactivated!
+		IsActive:  true, // Create as active first
 		Provider:  "google",
 		GoogleSub: "google_sub_deactivated",
 	}
-	db.Create(&deactivatedUser)
-
-	// Verify user is deactivated in DB
-	var user models.User
-	db.Where("email = ?", "deactivated@example.com").First(&user)
-
-	if user.IsActive {
-		t.Error("Expected user to be deactivated")
+	if err := db.Create(&deactivatedUser).Error; err != nil {
+		t.Fatalf("Failed to create user: %v", err)
 	}
 
-	// Simulate the deactivation check in GoogleAuth handler
+	// Then explicitly deactivate using Update (bypasses GORM zero-value issue)
+	if err := db.Model(&deactivatedUser).Update("is_active", false).Error; err != nil {
+		t.Fatalf("Failed to deactivate user: %v", err)
+	}
+
+	// Fetch fresh from DB to verify deactivated state persisted
+	var user models.User
+	if err := db.Where("email = ?", "deactivated@example.com").First(&user).Error; err != nil {
+		t.Fatalf("Failed to fetch user: %v", err)
+	}
+
+	// Verify user is correctly deactivated in DB
 	if user.IsActive {
-		t.Error("Deactivated user should be blocked from Google login")
-	} else {
-		// This is the expected path - user IS deactivated
-		t.Log("✅ Deactivated user correctly identified - would return 403")
+		t.Error("Expected user to be deactivated (is_active = false)")
+	}
+
+	// Verify the handler logic: deactivated user WOULD return 403
+	if !user.IsActive {
+		t.Log("✅ Deactivated user correctly identified - GoogleAuth would return 403 Forbidden")
 	}
 }
 
