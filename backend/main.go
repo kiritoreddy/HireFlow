@@ -28,7 +28,8 @@ func main() {
 	// Seed default users if they don't exist
 	seeder.SeedAdmin(db)
 	seeder.SeedCandidate(db)
-	seeder.SeedHiringManager(db) // ← ADDED: Test hiring manager for E2E testing
+	seeder.SeedHiringManager(db)
+	seeder.SeedInterviewer(db) // ← ADDED Sprint 4: Test interviewer for interview assignment flows
 
 	// Setup routes with CORS middleware
 	handler := routes.SetupRoutes(db)
