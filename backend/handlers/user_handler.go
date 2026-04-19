@@ -26,7 +26,7 @@ type UserListResponse struct {
 	CreatedAt string `json:"created_at"`
 }
 
-// CreateUserRequest is the body for admin creating a user (same as register)
+// CreateUserRequest is the body for admin creating a user
 type CreateUserRequest struct {
 	Name     string `json:"name"`
 	Email    string `json:"email"`
@@ -34,20 +34,40 @@ type CreateUserRequest struct {
 	Role     string `json:"role"`
 }
 
-// SetActiveRequest is the body for PATCH /users/{id} (deactivate/reactivate)
+// SetActiveRequest is the body for PATCH /users/{id}
 type SetActiveRequest struct {
 	IsActive *bool `json:"is_active"`
 }
 
-// ListUsers returns all users (admin only). GET /users
+// ListUsers returns all users or filters by role query param (admin only).
+// GET /users           → returns all users
+// GET /users?role=interviewer → returns only interviewers
+// Added Sprint 4: role query parameter filtering for interviewer assignment dropdown
 func (h *UserHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
 	var users []models.User
-	if err := h.DB.Order("id").Find(&users).Error; err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to list users"})
-		return
+
+	// Check for optional role query parameter
+	// Used by FE-2 to populate interviewer assignment dropdown
+	roleFilter := r.URL.Query().Get("role")
+
+	if roleFilter != "" {
+		// Filter by role if provided
+		if err := h.DB.Order("id").Where("role = ?", roleFilter).Find(&users).Error; err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Failed to list users"})
+			return
+		}
+	} else {
+		// Return all users if no role filter
+		if err := h.DB.Order("id").Find(&users).Error; err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Failed to list users"})
+			return
+		}
 	}
+
 	list := make([]UserListResponse, 0, len(users))
 	for _, u := range users {
 		list = append(list, UserListResponse{
@@ -59,12 +79,13 @@ func (h *UserHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
 			CreatedAt: u.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		})
 	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(list)
 }
 
-// CreateUser creates a new user (admin only). POST /users. Same validation as register; does not return a token.
+// CreateUser creates a new user (admin only). POST /users.
 func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var req CreateUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
