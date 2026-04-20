@@ -15,6 +15,9 @@ export interface DashboardStats {
   closedJobs: number;
   totalCandidates: number;
   totalUsers: number;
+  totalInterviews?: number;
+  pendingInterviews?: number;
+  completedInterviews?: number;
   departmentSummary: DepartmentStat[];
 }
 

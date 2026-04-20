@@ -75,6 +75,39 @@ import { catchError, of } from 'rxjs';
             <div class="stat-subtext">Registered in the system</div>
           </div>
         </div>
+
+        <div class="stat-card">
+          <div class="stat-icon interview-total">
+            <mat-icon>event_note</mat-icon>
+          </div>
+          <div class="stat-copy">
+            <div class="stat-label">Total Interviews</div>
+            <div class="stat-value">{{ totalInterviews }}</div>
+            <div class="stat-subtext">Scheduled across all applications</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon interview-pending">
+            <mat-icon>schedule</mat-icon>
+          </div>
+          <div class="stat-copy">
+            <div class="stat-label">Pending Interviews</div>
+            <div class="stat-value">{{ pendingInterviews }}</div>
+            <div class="stat-subtext">Assigned but feedback not submitted</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon interview-completed">
+            <mat-icon>fact_check</mat-icon>
+          </div>
+          <div class="stat-copy">
+            <div class="stat-label">Completed Interviews</div>
+            <div class="stat-value">{{ completedInterviews }}</div>
+            <div class="stat-subtext">Feedback submitted</div>
+          </div>
+        </div>
       </section>
 
       <section class="content-grid">
@@ -170,7 +203,7 @@ import { catchError, of } from 'rxjs';
 
       .stats-grid {
         display: grid;
-        grid-template-columns: repeat(5, minmax(0, 1fr));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 20px;
         margin-bottom: 24px;
       }
@@ -206,6 +239,9 @@ import { catchError, of } from 'rxjs';
       .stat-icon.candidates { background: #ece6ff; color: #7c3aed; }
       .stat-icon.closed     { background: #fdecea; color: #d32f2f; }
       .stat-icon.users      { background: #fff4e5; color: #d97706; }
+      .stat-icon.interview-total { background: #e0f2fe; color: #0284c7; }
+      .stat-icon.interview-pending { background: #fef3c7; color: #b45309; }
+      .stat-icon.interview-completed { background: #dcfce7; color: #16a34a; }
 
       .stat-copy { min-width: 0; }
 
@@ -336,6 +372,9 @@ export class DashboardComponent implements OnInit {
   closedJobs = 0;
   totalCandidates = 0;
   totalUsers = 0;
+  totalInterviews = 0;
+  pendingInterviews = 0;
+  completedInterviews = 0;
   departmentSummary: DepartmentStat[] = [];
   loading = signal(true);
 
@@ -356,6 +395,9 @@ export class DashboardComponent implements OnInit {
         this.closedJobs = stats.closedJobs;
         this.totalCandidates = stats.totalCandidates;
         this.totalUsers = stats.totalUsers;
+        this.totalInterviews = stats.totalInterviews ?? 0;
+        this.pendingInterviews = stats.pendingInterviews ?? 0;
+        this.completedInterviews = stats.completedInterviews ?? 0;
         this.departmentSummary = stats.departmentSummary;
         this.loading.set(false);
       } else {
@@ -371,6 +413,9 @@ export class DashboardComponent implements OnInit {
                 (j.selectedCount ?? 0) + (j.rejectedCount ?? 0));
             }, 0);
             this.totalUsers = 0; // not available from jobs endpoint
+            this.totalInterviews = 0;
+            this.pendingInterviews = 0;
+            this.completedInterviews = 0;
             const deptMap = new Map<string, DepartmentStat>();
             for (const job of jobs) {
               const dept = job.department || 'General';
