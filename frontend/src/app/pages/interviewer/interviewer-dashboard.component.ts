@@ -1,5 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { DatePipe, NgClass } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -22,7 +22,6 @@ import { Interview, InterviewStatus } from '../../core/models/interview.model';
     MatChipsModule,
     MatProgressSpinnerModule,
     MatDividerModule,
-    RouterLink,
   ],
   templateUrl: './interviewer-dashboard.component.html',
   styleUrl: './interviewer-dashboard.component.scss',

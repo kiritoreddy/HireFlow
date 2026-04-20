@@ -1,8 +1,13 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, of } from 'rxjs';
+import { Observable, catchError, map, of } from 'rxjs';
 import { Interview, InterviewFeedback, FeedbackSubmit } from '../models/interview.model';
 import { INTERVIEW_ENDPOINTS } from '../config/api.config';
+
+export interface FeedbackResult {
+  success: boolean;
+  error?: string;
+}
 
 @Injectable({ providedIn: 'root' })
 export class InterviewsApiService {
@@ -23,14 +28,13 @@ export class InterviewsApiService {
   }
 
   /** Submit feedback for an interview. */
-  submitFeedback(interviewId: number, payload: FeedbackSubmit): Observable<{ success: boolean; error?: string }> {
+  submitFeedback(interviewId: number, payload: FeedbackSubmit): Observable<FeedbackResult> {
     return this.http.post<InterviewFeedback>(INTERVIEW_ENDPOINTS.feedback(interviewId), payload).pipe(
+      map(() => ({ success: true } as FeedbackResult)),
       catchError((err) => {
         const msg = err?.error?.error ?? 'Failed to submit feedback. Please try again.';
-        return of({ success: false, error: msg } as never);
-      }),
-      // Map success to our standard shape
-      catchError(() => of({ success: false, error: 'Unexpected error.' }))
+        return of({ success: false, error: msg });
+      })
     );
   }
 }

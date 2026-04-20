@@ -1,5 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -9,7 +9,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { InterviewsApiService } from '../../core/services/interviews-api.service';
+import { InterviewsApiService, FeedbackResult } from '../../core/services/interviews-api.service';
 import { Interview, FeedbackSubmit, Recommendation } from '../../core/models/interview.model';
 
 @Component({
@@ -25,7 +25,6 @@ import { Interview, FeedbackSubmit, Recommendation } from '../../core/models/int
     MatSelectModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
-    RouterLink,
   ],
   templateUrl: './feedback-form.component.html',
   styleUrl: './feedback-form.component.scss',
@@ -96,10 +95,10 @@ export class FeedbackFormComponent implements OnInit {
       ...(this.comments.trim() ? { comments: this.comments.trim() } : {}),
     };
 
-    this.interviewsApi.submitFeedback(this.interview!.id, payload).subscribe((result: any) => {
+    this.interviewsApi.submitFeedback(this.interview!.id, payload).subscribe((result: FeedbackResult) => {
       this.submitting = false;
 
-      if (result?.success === false) {
+      if (!result.success) {
         this.error = result.error ?? 'Failed to submit feedback.';
         return;
       }
