@@ -24,6 +24,9 @@ describe('DashboardComponent', () => {
     closedJobs: 1,
     totalCandidates: 5,
     totalUsers: 7,
+    totalInterviews: 6,
+    pendingInterviews: 2,
+    completedInterviews: 4,
     departmentSummary: [
       { department: 'Engineering', openCount: 1, closedCount: 0 },
       { department: 'Product', openCount: 1, closedCount: 0 },
@@ -86,6 +89,13 @@ describe('DashboardComponent', () => {
   it('should set loading to false after success', () => {
     component.ngOnInit();
     expect(component.loading()).toBe(false);
+  });
+
+  it('should map interview stats from API response', () => {
+    component.ngOnInit();
+    expect(component.totalInterviews).toBe(6);
+    expect(component.pendingInterviews).toBe(2);
+    expect(component.completedInterviews).toBe(4);
   });
 
   it('should fall back to jobs API when stats endpoint fails', () => {
