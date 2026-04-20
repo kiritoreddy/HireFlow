@@ -21,6 +21,8 @@ func main() {
 		&models.Job{},
 		&models.Candidate{},
 		&models.Application{},
+		&models.Interview{},
+		&models.InterviewFeedback{},
 	); err != nil {
 		log.Fatal("failed to migrate database:", err)
 	}

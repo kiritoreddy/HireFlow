@@ -3,6 +3,7 @@ module backend
 go 1.25.6
 
 require (
+	github.com/coreos/go-oidc/v3 v3.18.0
 	github.com/glebarez/sqlite v1.11.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/gorilla/handlers v1.5.2
@@ -12,7 +13,6 @@ require (
 )
 
 require (
-	github.com/coreos/go-oidc/v3 v3.18.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/glebarez/go-sqlite v1.22.0 // indirect
