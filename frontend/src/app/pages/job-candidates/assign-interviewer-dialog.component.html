@@ -1,0 +1,31 @@
+<h2 mat-dialog-title>Assign Interviewer</h2>
+
+<mat-dialog-content>
+  <p>Assign an interviewer for {{ data.candidateName }}.</p>
+
+  <mat-form-field appearance="outline" class="w-full">
+    <mat-label>Interviewer</mat-label>
+    <mat-select [(ngModel)]="interviewerId" required>
+      @for (interviewer of data.interviewers; track interviewer.id) {
+        <mat-option [value]="interviewer.id">
+          {{ interviewer.firstName }} {{ interviewer.lastName }} ({{ interviewer.email }})
+        </mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="w-full">
+    <mat-label>Scheduled Date (optional)</mat-label>
+    <input matInput [(ngModel)]="scheduledDate" placeholder="2026-05-01T10:00:00Z" />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="w-full">
+    <mat-label>Interview Type</mat-label>
+    <input matInput [(ngModel)]="interviewType" placeholder="Technical" />
+  </mat-form-field>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Cancel</button>
+  <button mat-flat-button color="primary" (click)="submit()" [disabled]="!interviewerId">Assign</button>
+</mat-dialog-actions>
