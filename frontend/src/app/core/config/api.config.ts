@@ -23,6 +23,13 @@ export const DASHBOARD_ENDPOINTS = {
   stats: `${API_BASE_URL}/dashboard/stats`,
 } as const;
 
+export const INTERVIEW_ENDPOINTS = {
+  list: `${API_BASE_URL}/interviews`,
+  create: `${API_BASE_URL}/interviews`,
+  byApplication: (applicationId: string) => `${API_BASE_URL}/interviews?application_id=${applicationId}`,
+  feedbackByApplication: (applicationId: string) => `${API_BASE_URL}/applications/${applicationId}/feedback`,
+} as const;
+
 export const CANDIDATE_ENDPOINTS = {
   apply: `${API_BASE_URL}/api/candidate/apply`,
   byJob: (jobId: number) => `${API_BASE_URL}/api/candidate/jobs/${jobId}/applications`,
