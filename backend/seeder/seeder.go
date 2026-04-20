@@ -21,6 +21,10 @@ const (
 	DefaultHiringManagerEmail    = "manager@hireflow.com"
 	DefaultHiringManagerPassword = "Manager@1234"
 	DefaultHiringManagerName     = "Test Hiring Manager"
+
+	DefaultInterviewerEmail    = "interviewer@hireflow.com"
+	DefaultInterviewerPassword = "Interviewer@1234"
+	DefaultInterviewerName     = "Test Interviewer"
 )
 
 // SeedAdmin creates a default admin user if none exists.
@@ -39,6 +43,7 @@ func SeedAdmin(db *gorm.DB) {
 		Email:    DefaultAdminEmail,
 		Role:     "admin",
 		IsActive: true,
+		Provider: "email", // Sprint 4: explicitly set provider for seed users
 	}
 
 	if err := admin.HashPassword(DefaultAdminPassword); err != nil {
@@ -73,6 +78,7 @@ func SeedCandidate(db *gorm.DB) {
 		Email:    DefaultCandidateEmail,
 		Role:     "candidate",
 		IsActive: true,
+		Provider: "email", // Sprint 4: explicitly set provider for seed users
 	}
 
 	if err := candidate.HashPassword(DefaultCandidatePassword); err != nil {
@@ -107,6 +113,7 @@ func SeedHiringManager(db *gorm.DB) {
 		Email:    DefaultHiringManagerEmail,
 		Role:     "hiring_manager",
 		IsActive: true,
+		Provider: "email", // Sprint 4: explicitly set provider for seed users
 	}
 
 	if err := manager.HashPassword(DefaultHiringManagerPassword); err != nil {
@@ -122,5 +129,41 @@ func SeedHiringManager(db *gorm.DB) {
 	log.Println("✅ Default hiring manager user created successfully")
 	log.Printf("   Email:    %s", DefaultHiringManagerEmail)
 	log.Printf("   Password: %s", DefaultHiringManagerPassword)
+	log.Println("   ⚠️  For testing only - not for production use!")
+}
+
+// SeedInterviewer creates a default interviewer user for E2E testing.
+// Required for Sprint 4 interview assignment and feedback flows.
+// Safe to call on every startup - skips if interviewer already exists.
+func SeedInterviewer(db *gorm.DB) {
+	var count int64
+	db.Model(&models.User{}).Where("email = ?", DefaultInterviewerEmail).Count(&count)
+
+	if count > 0 {
+		log.Println("Test interviewer user already exists - skipping seed")
+		return
+	}
+
+	interviewer := models.User{
+		Name:     DefaultInterviewerName,
+		Email:    DefaultInterviewerEmail,
+		Role:     "interviewer",
+		IsActive: true,
+		Provider: "email", // Sprint 4: explicitly set provider for seed users
+	}
+
+	if err := interviewer.HashPassword(DefaultInterviewerPassword); err != nil {
+		log.Printf("Failed to hash interviewer password: %v", err)
+		return
+	}
+
+	if err := db.Create(&interviewer).Error; err != nil {
+		log.Printf("Failed to create interviewer user: %v", err)
+		return
+	}
+
+	log.Println("✅ Default interviewer user created successfully")
+	log.Printf("   Email:    %s", DefaultInterviewerEmail)
+	log.Printf("   Password: %s", DefaultInterviewerPassword)
 	log.Println("   ⚠️  For testing only - not for production use!")
 }
