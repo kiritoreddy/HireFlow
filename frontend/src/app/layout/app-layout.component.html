@@ -1,6 +1,6 @@
 <div class="app-layout">
   <header class="app-header">
-    <a mat-button [routerLink]="isCandidate ? '/portal/jobs' : '/dashboard'" class="app-logo">
+    <a mat-button [routerLink]="isCandidate ? '/portal/jobs' : isInterviewer ? '/interviewer/interviews' : '/dashboard'" class="app-logo">
       <span class="logo-text">
         <span class="logo-hire">Hire</span><span class="logo-flow">Flow</span>
       </span>
@@ -68,6 +68,16 @@
           >
             <mat-icon>assignment</mat-icon>
             <span>My applications</span>
+          </a>
+        } @else if (isInterviewer) {
+          <a
+            mat-button
+            routerLink="/interviewer/interviews"
+            routerLinkActive="active"
+            class="nav-link"
+          >
+            <mat-icon>event_note</mat-icon>
+            <span>My Interviews</span>
           </a>
         } @else {
           <a

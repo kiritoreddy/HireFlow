@@ -97,6 +97,27 @@ export class AuthService {
     );
   }
 
+  /**
+   * Login via Google ID token (from GIS).
+   * Sends the credential to POST /auth/google and stores the session on success.
+   */
+  loginWithGoogle(idToken: string) {
+    return this.http.post<AuthResponse>(AUTH_ENDPOINTS.google, { id_token: idToken }).pipe(
+      tap((res) => {
+        sessionStorage.setItem(TOKEN_KEY, res.access_token);
+        sessionStorage.setItem(USER_KEY, JSON.stringify(res.user));
+        sessionStorage.setItem(AUTH_KEY, 'true');
+        this.loggedIn.set(true);
+      }),
+      map(() => ({ success: true as const })),
+      catchError((err) => {
+        const msg =
+          err?.error?.error ?? (err?.status === 0 ? 'Cannot reach server. Is the backend running?' : 'Google sign-in failed. Please try again.');
+        return of({ success: false as const, error: msg });
+      })
+    );
+  }
+
   /** Register a new candidate account. */
   register(name: string, email: string, password: string) {
     const body = { name, email, password, role: 'candidate' };
