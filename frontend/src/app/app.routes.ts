@@ -5,6 +5,7 @@ import { HomeRedirectComponent } from './pages/home-redirect/home-redirect.compo
 import { authGuard } from './core/auth/auth.guard';
 import { adminGuard } from './core/auth/admin.guard';
 import { hiringOnlyGuard, candidateGuard } from './core/auth/candidate.guard';
+import { interviewerGuard } from './core/auth/interviewer.guard';
 
 export const routes: Routes = [
   { path: 'login', loadComponent: () => import('./pages/login/login.component').then(m => m.LoginComponent) },
@@ -18,6 +19,8 @@ export const routes: Routes = [
     children: [
       { path: '', component: HomeRedirectComponent },
       { path: 'dashboard', canActivate: [hiringOnlyGuard], component: DashboardComponent },
+
+      // Candidate portal
       {
         path: 'portal/jobs',
         canActivate: [candidateGuard],
@@ -38,6 +41,22 @@ export const routes: Routes = [
             (m) => m.CandidateMyApplicationsComponent
           ),
       },
+
+      // Interviewer portal
+      {
+        path: 'interviewer/interviews',
+        canActivate: [interviewerGuard],
+        loadComponent: () =>
+          import('./pages/interviewer/interviewer-dashboard.component').then(m => m.InterviewerDashboardComponent),
+      },
+      {
+        path: 'interviewer/interviews/:id/feedback',
+        canActivate: [interviewerGuard],
+        loadComponent: () =>
+          import('./pages/interviewer/feedback-form.component').then(m => m.FeedbackFormComponent),
+      },
+
+      // Hiring manager routes
       {
         path: 'candidates',
         canActivate: [hiringOnlyGuard],

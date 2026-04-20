@@ -1,0 +1,107 @@
+<div class="interviewer-page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">My Interviews</h1>
+      <p class="page-subtitle">Your assigned interview schedule</p>
+    </div>
+  </div>
+
+  @if (loading) {
+    <div class="center-state">
+      <mat-spinner diameter="48"></mat-spinner>
+      <p>Loading interviews…</p>
+    </div>
+  } @else if (error) {
+    <div class="center-state error-state">
+      <mat-icon class="state-icon">error_outline</mat-icon>
+      <p>{{ error }}</p>
+      <button mat-stroked-button (click)="ngOnInit()">Retry</button>
+    </div>
+  } @else if (interviews.length === 0) {
+    <div class="center-state empty-state">
+      <mat-icon class="state-icon">event_available</mat-icon>
+      <p>No interviews assigned to you yet.</p>
+    </div>
+  } @else {
+    <!-- Stats row -->
+    <div class="stats-row">
+      <mat-card class="stat-card">
+        <span class="stat-number">{{ scheduled.length }}</span>
+        <span class="stat-label">Upcoming</span>
+      </mat-card>
+      <mat-card class="stat-card">
+        <span class="stat-number">{{ completed.length }}</span>
+        <span class="stat-label">Completed</span>
+      </mat-card>
+      <mat-card class="stat-card">
+        <span class="stat-number">{{ cancelled.length }}</span>
+        <span class="stat-label">Cancelled</span>
+      </mat-card>
+    </div>
+
+    <!-- Interview list -->
+    <div class="interview-list">
+      @for (interview of interviews; track interview.id) {
+        <mat-card class="interview-card">
+          <div class="card-row">
+            <div class="card-main">
+              <div class="candidate-name">
+                {{ interview.candidate_name ?? 'Candidate #' + interview.application_id }}
+              </div>
+              <div class="job-title">{{ interview.job_title ?? 'Position' }}</div>
+              <div class="meta-row">
+                <span class="meta-item">
+                  <mat-icon class="meta-icon">schedule</mat-icon>
+                  {{ interview.scheduled_date | date:'d MMM y, h:mm a' }}
+                </span>
+                <span class="meta-item">
+                  <mat-icon class="meta-icon">category</mat-icon>
+                  {{ interview.interview_type }}
+                </span>
+              </div>
+            </div>
+
+            <div class="card-actions">
+              <span class="status-badge" [ngClass]="statusClass(interview.status)">
+                {{ statusLabel(interview.status) }}
+              </span>
+
+              @if (interview.status === 'SCHEDULED') {
+                <button
+                  mat-flat-button
+                  color="primary"
+                  class="feedback-btn"
+                  (click)="goToFeedback(interview)"
+                >
+                  <mat-icon>rate_review</mat-icon>
+                  Submit Feedback
+                </button>
+              } @else if (interview.status === 'COMPLETED') {
+                @if (interview.feedback) {
+                  <button
+                    mat-stroked-button
+                    class="feedback-btn"
+                    (click)="goToFeedback(interview)"
+                  >
+                    <mat-icon>visibility</mat-icon>
+                    View Feedback
+                  </button>
+                } @else {
+                  <button
+                    mat-flat-button
+                    color="accent"
+                    class="feedback-btn"
+                    (click)="goToFeedback(interview)"
+                  >
+                    <mat-icon>rate_review</mat-icon>
+                    Submit Feedback
+                  </button>
+                }
+              }
+            </div>
+          </div>
+        </mat-card>
+      }
+    </div>
+  }
+</div>

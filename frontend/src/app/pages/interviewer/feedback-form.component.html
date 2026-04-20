@@ -1,0 +1,158 @@
+<div class="feedback-page">
+  <div class="page-header">
+    <button mat-icon-button (click)="goBack()" aria-label="Back">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <div>
+      <h1 class="page-title">Interview Feedback</h1>
+      <p class="page-subtitle">
+        @if (interview) {
+          {{ interview.candidate_name ?? 'Candidate' }} — {{ interview.interview_type }}
+        } @else {
+          Feedback form
+        }
+      </p>
+    </div>
+  </div>
+
+  @if (loading) {
+    <div class="center-state">
+      <mat-spinner diameter="48"></mat-spinner>
+      <p>Loading interview details…</p>
+    </div>
+  } @else if (error && !interview) {
+    <div class="center-state error-state">
+      <mat-icon class="state-icon">error_outline</mat-icon>
+      <p>{{ error }}</p>
+      <button mat-stroked-button (click)="goBack()">Go Back</button>
+    </div>
+  } @else {
+    @if (submitted) {
+      <div class="submitted-banner">
+        <mat-icon>check_circle</mat-icon>
+        <span>Feedback has been submitted. This form is now read-only.</span>
+      </div>
+    }
+
+    <mat-card class="feedback-card">
+      <form (ngSubmit)="onSubmit()">
+
+        <!-- Overall Rating -->
+        <div class="field-group">
+          <label class="field-label">Overall Rating <span class="required">*</span></label>
+          <div class="score-row">
+            @for (n of scoreOptions; track n) {
+              <button
+                type="button"
+                class="score-btn"
+                [class.selected]="rating === n"
+                [disabled]="submitted"
+                (click)="rating = n"
+              >
+                {{ n }}
+              </button>
+            }
+            <span class="score-hint">{{ scoreLabel(rating) }}</span>
+          </div>
+        </div>
+
+        <!-- Technical Score -->
+        <div class="field-group">
+          <label class="field-label">Technical Score <span class="required">*</span></label>
+          <div class="score-row">
+            @for (n of scoreOptions; track n) {
+              <button
+                type="button"
+                class="score-btn"
+                [class.selected]="technicalScore === n"
+                [disabled]="submitted"
+                (click)="technicalScore = n"
+              >
+                {{ n }}
+              </button>
+            }
+            <span class="score-hint">{{ scoreLabel(technicalScore) }}</span>
+          </div>
+        </div>
+
+        <!-- Communication -->
+        <div class="field-group">
+          <label class="field-label">Communication <span class="required">*</span></label>
+          <div class="score-row">
+            @for (n of scoreOptions; track n) {
+              <button
+                type="button"
+                class="score-btn"
+                [class.selected]="communication === n"
+                [disabled]="submitted"
+                (click)="communication = n"
+              >
+                {{ n }}
+              </button>
+            }
+            <span class="score-hint">{{ scoreLabel(communication) }}</span>
+          </div>
+        </div>
+
+        <!-- Recommendation -->
+        <div class="field-group">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Recommendation <span class="required">*</span></mat-label>
+            <mat-select [(ngModel)]="recommendation" name="recommendation" [disabled]="submitted" required>
+              @for (opt of recommendations; track opt.value) {
+                <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <!-- Comments -->
+        <div class="field-group">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Comments <span class="optional">(optional)</span></mat-label>
+            <textarea
+              matInput
+              [(ngModel)]="comments"
+              name="comments"
+              rows="4"
+              [disabled]="submitted"
+              placeholder="Share your observations about the candidate…"
+            ></textarea>
+          </mat-form-field>
+        </div>
+
+        @if (error) {
+          <p class="error-msg">{{ error }}</p>
+        }
+
+        @if (!submitted) {
+          <div class="form-actions">
+            <button mat-stroked-button type="button" (click)="goBack()">Cancel</button>
+            <button
+              mat-flat-button
+              color="primary"
+              type="submit"
+              class="submit-btn"
+              [disabled]="submitting"
+            >
+              @if (submitting) {
+                <mat-spinner diameter="20" class="btn-spinner"></mat-spinner>
+                Submitting…
+              } @else {
+                Submit Feedback
+              }
+            </button>
+          </div>
+        } @else {
+          <div class="form-actions">
+            <button mat-stroked-button type="button" (click)="goBack()">
+              <mat-icon>arrow_back</mat-icon>
+              Back to Interviews
+            </button>
+          </div>
+        }
+
+      </form>
+    </mat-card>
+  }
+</div>

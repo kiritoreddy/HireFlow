@@ -4,6 +4,7 @@ export const API_BASE_URL = 'http://localhost:8080';
 export const AUTH_ENDPOINTS = {
   login: `${API_BASE_URL}/auth/login`,
   register: `${API_BASE_URL}/auth/register`,
+  google: `${API_BASE_URL}/auth/google`,
   forgotPassword: `${API_BASE_URL}/auth/forgot-password`,
   resetPassword: `${API_BASE_URL}/auth/reset-password`,
 } as const;
@@ -30,4 +31,10 @@ export const CANDIDATE_ENDPOINTS = {
   delete: (applicationId: string) => `${API_BASE_URL}/api/candidate/applications/${applicationId}`,
   myApplications: `${API_BASE_URL}/api/candidate/applications`,
   withdraw: (applicationId: string) => `${API_BASE_URL}/api/candidate/applications/${applicationId}/withdraw`,
+} as const;
+
+export const INTERVIEW_ENDPOINTS = {
+  myInterviews: `${API_BASE_URL}/interviews/my`,
+  byId: (id: number) => `${API_BASE_URL}/interviews/${id}`,
+  feedback: (interviewId: number) => `${API_BASE_URL}/interviews/${interviewId}/feedback`,
 } as const;

@@ -25,12 +25,14 @@ export class AppLayoutComponent {
   currentUser: CurrentUserProfile | null = null;
   isAdmin = false;
   isCandidate = false;
+  isInterviewer = false;
 
   constructor(private auth: AuthService) {
     this.currentUser = this.auth.getCurrentUser();
     const role = this.currentUser?.role ?? '';
     this.isAdmin = role === 'admin';
     this.isCandidate = role === 'candidate';
+    this.isInterviewer = role === 'interviewer';
   }
 
   logout(): void {

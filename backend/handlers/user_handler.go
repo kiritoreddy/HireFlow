@@ -192,7 +192,7 @@ func (h *UserHandler) SetUserActive(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	user.IsActive = *req.IsActive
-	if err := h.DB.Save(&user).Error; err != nil {
+	if err := h.DB.Model(&user).Update("is_active", *req.IsActive).Error; err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to update user"})
