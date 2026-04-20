@@ -328,7 +328,57 @@ go test ./handlers/ -run TestGetDashboardStats -v  # Dashboard tests only
 
 ---
 
-## 7. Known Limitations
+## 7. FE-1 — Frontend Auth, Shell & Interviewer Portal (Khyathi Vardhan)
+
+### Features Implemented
+
+#### Google Sign-In Integration
+- Integrated Google Identity Services (GIS) on the login page
+- Native GIS button rendered when `GOOGLE_CLIENT_ID` is configured; styled fallback shown otherwise
+- On credential callback: sends `POST /auth/google` with `{ id_token }` to backend
+- Session stored identically to email login on success
+- Loading and error states handled for both sign-in paths
+- Role-aware redirect after login: interviewer → `/interviewer/interviews`, candidate → `/portal/jobs`, others → `/dashboard`
+
+#### Interviewer Route Guard (`interviewer.guard.ts`)
+- Allows only users with `role = interviewer`
+- Unauthenticated users → `/login`; all other roles → `/dashboard`
+
+#### Interviewer Dashboard (`/interviewer/interviews`)
+- Fetches assigned interviews from `GET /interviews/my`
+- Stat cards: Upcoming / Completed / Cancelled
+- Submit Feedback button (SCHEDULED) and View Feedback button (COMPLETED)
+- Loading, empty, and error states
+
+#### Interview Feedback Form (`/interviewer/interviews/:id/feedback`)
+- Required: Overall Rating, Technical Score, Communication (all 1–5), Recommendation
+- Optional: Comments
+- Feedback is final once submitted — form becomes read-only, no editing allowed
+- Submit button disabled during request to prevent duplicates
+
+#### Role-Based Navigation Updates
+- Interviewers see only **My Interviews** in the sidebar
+- `HomeRedirectComponent` updated to route interviewers correctly
+
+### FE-1 Unit Tests (Vitest)
+
+| File | Tests |
+|------|-------|
+| `interviewer.guard.spec.ts` | 5 tests — allow interviewer, redirect unauthenticated/admin/candidate/hiring_manager |
+| `interviews-api.service.spec.ts` | 6 tests — getMyInterviews, getInterview, submitFeedback success/failure |
+
+### FE-1 E2E Tests (Cypress)
+
+| File | Tests |
+|------|-------|
+| `interviewer-portal.cy.ts` | 4 tests — guard redirect, interview list, stat cards, feedback navigation |
+
+### Bug Fix
+- Fixed `UNIQUE constraint failed: users.google_sub` error in backend when deactivating users. Replaced `DB.Save()` with `DB.Model().Update()` so only `is_active` is updated.
+
+---
+
+## 8. Known Limitations
 
 - Google OAuth requires `GOOGLE_CLIENT_ID` environment variable set in production
 - No email sending for password reset (demo token returned in response)
