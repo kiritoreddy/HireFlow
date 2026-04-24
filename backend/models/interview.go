@@ -4,8 +4,8 @@ import "time"
 
 type Interview struct {
 	ID            uint        `gorm:"primaryKey" json:"id"`
-	ApplicationID uint        `gorm:"not null;index" json:"application_id"`
-	InterviewerID uint        `gorm:"not null;index" json:"interviewer_id"`
+	ApplicationID uint        `gorm:"not null;index;uniqueIndex:idx_app_interviewer" json:"application_id"`
+	InterviewerID uint        `gorm:"not null;index;uniqueIndex:idx_app_interviewer" json:"interviewer_id"`
 	ScheduledDate time.Time   `json:"scheduled_date"`
 	InterviewType string      `gorm:"default:'TECHNICAL'" json:"interview_type"`
 	Status        string      `gorm:"default:'SCHEDULED'" json:"status"`

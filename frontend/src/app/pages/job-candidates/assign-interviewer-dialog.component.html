@@ -15,17 +15,22 @@
   </mat-form-field>
 
   <mat-form-field appearance="outline" class="w-full">
-    <mat-label>Scheduled Date (optional)</mat-label>
-    <input matInput [(ngModel)]="scheduledDate" placeholder="2026-05-01T10:00:00Z" />
+    <mat-label>Scheduled Date (RFC3339 UTC)</mat-label>
+    <input matInput [(ngModel)]="scheduledDate" placeholder="2026-05-01T10:00:00Z" required />
   </mat-form-field>
 
   <mat-form-field appearance="outline" class="w-full">
     <mat-label>Interview Type</mat-label>
-    <input matInput [(ngModel)]="interviewType" placeholder="Technical" />
+    <mat-select [(ngModel)]="interviewType" required>
+      <mat-option value="TECHNICAL">Technical</mat-option>
+      <mat-option value="BEHAVIORAL">Behavioral</mat-option>
+      <mat-option value="HR">HR</mat-option>
+      <mat-option value="SYSTEM_DESIGN">System Design</mat-option>
+    </mat-select>
   </mat-form-field>
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
   <button mat-button mat-dialog-close>Cancel</button>
-  <button mat-flat-button color="primary" (click)="submit()" [disabled]="!interviewerId">Assign</button>
+  <button mat-flat-button color="primary" (click)="submit()" [disabled]="!interviewerId || !scheduledDate || !interviewType">Assign</button>
 </mat-dialog-actions>

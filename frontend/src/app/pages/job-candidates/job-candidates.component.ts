@@ -237,7 +237,7 @@ export class JobCandidatesComponent implements OnInit {
               application_id: candidate.id,
               interviewer_id: result.interviewerId,
               scheduled_date: result.scheduledDate,
-              interview_type: result.interviewType,
+              interview_type: result.interviewType.toUpperCase(),
             })
             .subscribe({
               next: () => {
@@ -255,7 +255,7 @@ export class JobCandidatesComponent implements OnInit {
   getAssignedInterviewers(candidate: JobCandidate): string {
     const rows = this.assignmentsByApplication[candidate.id] ?? [];
     if (rows.length === 0) return 'Unassigned';
-    return rows.map((row) => row.interviewerName).join(', ');
+    return rows.map((row) => row.interviewer?.name || `Interviewer #${row.interviewer_id}`).join(', ');
   }
 
   getInterviewStatus(candidate: JobCandidate): string {
@@ -263,7 +263,7 @@ export class JobCandidatesComponent implements OnInit {
     const feedback = this.feedbackByApplication[candidate.id] ?? [];
     if (assignments.length === 0) return 'Pending';
     if (feedback.length > 0) return 'Completed';
-    if (assignments.some((row) => row.status === 'Scheduled')) return 'Scheduled';
+    if (assignments.some((row) => row.status === 'SCHEDULED')) return 'Scheduled';
     return 'Pending';
   }
 

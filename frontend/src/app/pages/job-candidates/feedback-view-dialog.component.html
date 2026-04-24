@@ -8,16 +8,16 @@
     <div class="feedback-list">
       @for (item of data.feedback; track item.id) {
         <div class="feedback-card">
-          <p><strong>Interviewer:</strong> {{ item.interviewerName }}</p>
+          <p><strong>Interviewer:</strong> {{ item.interview?.interviewer?.name || ('Interviewer #' + item.interviewer_id) }}</p>
           <p><strong>Overall:</strong> {{ item.rating }}/5</p>
-          <p><strong>Technical:</strong> {{ item.technicalScore }}/5</p>
+          <p><strong>Technical:</strong> {{ item.technical_score }}/5</p>
           <p><strong>Communication:</strong> {{ item.communication }}/5</p>
           <p><strong>Recommendation:</strong> {{ item.recommendation }}</p>
           @if (item.comments) {
             <p><strong>Comments:</strong> {{ item.comments }}</p>
           }
-          @if (item.submittedAt) {
-            <p><strong>Submitted:</strong> {{ item.submittedAt | date: 'medium' }}</p>
+          @if (item.submitted_at) {
+            <p><strong>Submitted:</strong> {{ item.submitted_at | date: 'medium' }}</p>
           }
         </div>
       }

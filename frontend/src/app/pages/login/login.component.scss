@@ -187,6 +187,18 @@
   flex-shrink: 0;
 }
 
+.gis-btn-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.btn-spinner {
+  display: inline-block;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
 .register-link {
   text-align: center;
   font-size: 14px;

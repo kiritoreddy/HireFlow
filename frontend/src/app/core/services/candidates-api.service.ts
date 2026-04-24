@@ -6,12 +6,18 @@ import { CandidateStage, JobCandidate } from '../models/candidate.model';
 import { MyApplication } from '../models/my-application.model';
 
 interface BackendApplicationRow {
-  id: string;
+  id: string | number;
   job_id: number;
-  name: string;
-  email: string;
-  resume: string;
-  stage: string;
+  name?: string;
+  email?: string;
+  resume?: string;
+  stage?: string;
+  status?: string;
+  candidate?: {
+    name?: string;
+    email?: string;
+    resume_path?: string;
+  };
 }
 
 interface BackendMyApplicationRow {
@@ -25,15 +31,22 @@ interface BackendMyApplicationRow {
 }
 
 function mapRow(r: BackendApplicationRow): JobCandidate {
-  const stage = (['Applied', 'Interview', 'Selected', 'Rejected'] as const).includes(r.stage as CandidateStage)
-    ? (r.stage as CandidateStage)
-    : 'Applied';
+  const backendStage = r.stage ?? r.status ?? '';
+  const normalized = backendStage.toUpperCase();
+  const stage: CandidateStage =
+    normalized === 'INTERVIEW'
+      ? 'Interview'
+      : normalized === 'SELECTED'
+        ? 'Selected'
+        : normalized === 'REJECTED'
+          ? 'Rejected'
+          : 'Applied';
   return {
-    id: r.id,
+    id: String(r.id),
     jobId: r.job_id,
-    name: r.name,
-    email: r.email,
-    resume: r.resume || '—',
+    name: r.name || r.candidate?.name || 'Candidate',
+    email: r.email || r.candidate?.email || 'unknown@email.com',
+    resume: r.resume || r.candidate?.resume_path || '—',
     stage,
   };
 }

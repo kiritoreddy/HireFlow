@@ -1,55 +1,20 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, map } from 'rxjs';
+import { Observable, catchError, map, of, switchMap, forkJoin } from 'rxjs';
+import { Interview, InterviewFeedback, FeedbackSubmit } from '../models/interview.model';
 import { INTERVIEW_ENDPOINTS, USERS_ENDPOINTS } from '../config/api.config';
-import { Interview, InterviewFeedback, InterviewStatus } from '../models/interview.model';
 import { User } from '../models/user.model';
-
-interface BackendInterviewerRow {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-  is_active?: boolean;
-}
-
-interface BackendInterviewRow {
-  id: number;
-  application_id: string | number;
-  interviewer_id: string | number;
-  interviewer_name?: string;
-  scheduled_date?: string;
-  interview_type?: string;
-  status?: string;
-}
-
-interface BackendFeedbackRow {
-  id: number;
-  interview_id: number;
-  interviewer_id: string | number;
-  interviewer_name?: string;
-  rating: number;
-  technical_score: number;
-  communication: number;
-  comments?: string;
-  recommendation: string;
-  submitted_at?: string;
-}
 
 interface AssignInterviewPayload {
   application_id: string;
   interviewer_id: string;
-  scheduled_date?: string;
-  interview_type?: string;
+  scheduled_date: string;
+  interview_type: string;
 }
 
-function mapStatus(value?: string): InterviewStatus {
-  if (!value) return 'Pending';
-  const normalized = value.toLowerCase();
-  if (normalized === 'scheduled') return 'Scheduled';
-  if (normalized === 'completed') return 'Completed';
-  if (normalized === 'cancelled') return 'Cancelled';
-  return 'Pending';
+export interface FeedbackResult {
+  success: boolean;
+  error?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -57,21 +22,25 @@ export class InterviewsApiService {
   private http = inject(HttpClient);
 
   listInterviewers(): Observable<User[]> {
-    return this.http.get<BackendInterviewerRow[]>(`${USERS_ENDPOINTS.list}?role=interviewer`).pipe(
-      map((rows) =>
-        rows.map((row) => {
-          const parts = (row.name || '').trim().split(/\s+/);
-          return {
-            id: String(row.id),
-            firstName: parts[0] ?? '',
-            lastName: parts.slice(1).join(' '),
-            email: row.email,
-            role: 'interviewer',
-            isActive: row.is_active ?? true,
-          } satisfies User;
-        })
+    return this.http
+      .get<Array<{ id: number; name: string; email: string; is_active?: boolean }>>(
+        `${USERS_ENDPOINTS.list}?role=interviewer`
       )
-    );
+      .pipe(
+        map((rows) =>
+          rows.map((row) => {
+            const parts = (row.name || '').trim().split(/\s+/);
+            return {
+              id: String(row.id),
+              firstName: parts[0] ?? '',
+              lastName: parts.slice(1).join(' '),
+              email: row.email,
+              role: 'interviewer',
+              isActive: row.is_active ?? true,
+            } satisfies User;
+          })
+        )
+      );
   }
 
   assignInterviewer(payload: AssignInterviewPayload): Observable<void> {
@@ -79,39 +48,57 @@ export class InterviewsApiService {
   }
 
   listByApplication(applicationId: string): Observable<Interview[]> {
-    return this.http.get<BackendInterviewRow[]>(INTERVIEW_ENDPOINTS.byApplication(applicationId)).pipe(
-      map((rows) =>
-        rows.map((row) => ({
-          id: row.id,
-          applicationId: String(row.application_id),
-          interviewerId: String(row.interviewer_id),
-          interviewerName: row.interviewer_name || `Interviewer #${row.interviewer_id}`,
-          scheduledDate: row.scheduled_date,
-          interviewType: row.interview_type,
-          status: mapStatus(row.status),
-        }))
-      )
+    return this.http.get<Interview[]>(INTERVIEW_ENDPOINTS.byApplication(applicationId)).pipe(
+      catchError(() => of([]))
     );
   }
 
   listFeedbackByApplication(applicationId: string): Observable<InterviewFeedback[]> {
-    return this.http
-      .get<BackendFeedbackRow[]>(INTERVIEW_ENDPOINTS.feedbackByApplication(applicationId))
-      .pipe(
-        map((rows) =>
-          rows.map((row) => ({
-            id: row.id,
-            interviewId: row.interview_id,
-            interviewerId: String(row.interviewer_id),
-            interviewerName: row.interviewer_name || `Interviewer #${row.interviewer_id}`,
-            rating: row.rating,
-            technicalScore: row.technical_score,
-            communication: row.communication,
-            comments: row.comments || '',
-            recommendation: row.recommendation as InterviewFeedback['recommendation'],
-            submittedAt: row.submitted_at,
-          }))
+    return this.http.get<InterviewFeedback[]>(INTERVIEW_ENDPOINTS.feedbackByApplication(applicationId)).pipe(
+      catchError(() => of([]))
+    );
+  }
+
+  getMyInterviews(): Observable<Interview[]> {
+    return this.http.get<Interview[]>(INTERVIEW_ENDPOINTS.myInterviews).pipe(
+      switchMap((interviews) => {
+        if (interviews.length === 0) return of([]);
+        return forkJoin(
+          interviews.map((interview) =>
+            this.getInterviewFeedback(interview.id).pipe(
+              map((feedback) => ({ ...interview, feedback: feedback ?? interview.feedback }))
+            )
+          )
+        );
+      }),
+      catchError(() => of([]))
+    );
+  }
+
+  getInterview(id: number): Observable<Interview | null> {
+    return this.http.get<Interview>(INTERVIEW_ENDPOINTS.byId(id)).pipe(
+      switchMap((interview) =>
+        this.getInterviewFeedback(id).pipe(
+          map((feedback) => ({ ...interview, feedback: feedback ?? interview.feedback }))
         )
-      );
+      ),
+      catchError(() => of(null))
+    );
+  }
+
+  getInterviewFeedback(interviewId: number): Observable<InterviewFeedback | null> {
+    return this.http.get<InterviewFeedback>(INTERVIEW_ENDPOINTS.feedback(interviewId)).pipe(
+      catchError(() => of(null))
+    );
+  }
+
+  submitFeedback(interviewId: number, payload: FeedbackSubmit): Observable<FeedbackResult> {
+    return this.http.post<InterviewFeedback>(INTERVIEW_ENDPOINTS.feedback(interviewId), payload).pipe(
+      map(() => ({ success: true } as FeedbackResult)),
+      catchError((err) => {
+        const msg = err?.error?.error ?? 'Failed to submit feedback. Please try again.';
+        return of({ success: false, error: msg });
+      })
+    );
   }
 }

@@ -15,8 +15,8 @@ interface DialogData {
 
 export interface AssignInterviewerDialogResult {
   interviewerId: string;
-  scheduledDate?: string;
-  interviewType?: string;
+  scheduledDate: string;
+  interviewType: string;
 }
 
 @Component({
@@ -35,8 +35,8 @@ export interface AssignInterviewerDialogResult {
 })
 export class AssignInterviewerDialogComponent {
   interviewerId = '';
-  scheduledDate = '';
-  interviewType = 'Technical';
+  scheduledDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+  interviewType = 'TECHNICAL';
 
   constructor(
     @Inject(MAT_DIALOG_DATA) readonly data: DialogData,
@@ -44,11 +44,11 @@ export class AssignInterviewerDialogComponent {
   ) {}
 
   submit(): void {
-    if (!this.interviewerId) return;
+    if (!this.interviewerId || !this.scheduledDate || !this.interviewType) return;
     this.dialogRef.close({
       interviewerId: this.interviewerId,
-      scheduledDate: this.scheduledDate || undefined,
-      interviewType: this.interviewType || undefined,
+      scheduledDate: this.scheduledDate,
+      interviewType: this.interviewType,
     } satisfies AssignInterviewerDialogResult);
   }
 }

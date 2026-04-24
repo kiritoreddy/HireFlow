@@ -57,14 +57,14 @@ describe('JobCandidatesComponent', () => {
       listByApplication: vi.fn().mockImplementation((applicationId: string) =>
         of(
           applicationId === 'c1'
-            ? [{ id: 1, applicationId: 'c1', interviewerId: '9', interviewerName: 'Nina Ray', status: 'Scheduled' }]
+            ? [{ id: 1, application_id: 1, interviewer_id: 9, interviewer: { name: 'Nina Ray' }, status: 'SCHEDULED' }]
             : []
         )
       ),
       listFeedbackByApplication: vi.fn().mockImplementation((applicationId: string) =>
         of(
           applicationId === 'c1'
-            ? [{ id: 11, interviewId: 1, interviewerId: '9', interviewerName: 'Nina Ray', rating: 4, technicalScore: 4, communication: 4, comments: '', recommendation: 'Hire' }]
+            ? [{ id: 11, interview_id: 1, interviewer_id: 9, rating: 4, technical_score: 4, communication: 4, comments: '', recommendation: 'HIRE' }]
             : []
         )
       ),
@@ -196,15 +196,15 @@ describe('JobCandidatesComponent', () => {
 
     it('should assign interviewer from dialog result', () => {
       dialogSpy.open.mockReturnValueOnce({
-        afterClosed: () => of({ interviewerId: '9', interviewType: 'Technical' }),
+        afterClosed: () => of({ interviewerId: '9', scheduledDate: '2026-05-01T10:00:00Z', interviewType: 'TECHNICAL' }),
       });
       const candidate = component.dataSource.data[0];
       component.openAssignInterviewerDialog(candidate);
       expect(interviewsApiSpy.assignInterviewer).toHaveBeenCalledWith({
         application_id: candidate.id,
         interviewer_id: '9',
-        scheduled_date: undefined,
-        interview_type: 'Technical',
+        scheduled_date: '2026-05-01T10:00:00Z',
+        interview_type: 'TECHNICAL',
       });
     });
 
