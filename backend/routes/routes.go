@@ -60,8 +60,8 @@ func SetupRoutes(db *gorm.DB) http.Handler {
 	// ---------------------------
 	candidateHandler := &handlers.CandidateHandler{DB: db}
 
-	// Apply to job (candidate only - creates or reuses candidate by email)
-	router.HandleFunc("/api/candidate/apply", candidateHandler.ApplyWithCandidate).Methods("POST")
+	// Apply to job (candidate only - creates or reuses candidate by email; JWT required)
+	router.HandleFunc("/api/candidate/apply", middleware.RequireAuth(candidateHandler.ApplyWithCandidate)).Methods("POST")
 
 	// List applications for a specific job (hiring pipeline view - hiring_manager/admin)
 	router.HandleFunc("/api/jobs/{jobId}/applications", candidateHandler.ListApplicationsByJob).Methods("GET")
@@ -70,13 +70,65 @@ func SetupRoutes(db *gorm.DB) http.Handler {
 	router.HandleFunc("/api/applications/{id}/stage", candidateHandler.UpdateApplicationStage).Methods("PATCH")
 
 	// Candidate portal: list my applications (JWT required - candidate only)
-	router.HandleFunc("/api/candidate/my-applications", candidateHandler.ListMyApplications).Methods("GET")
+	router.HandleFunc("/api/candidate/my-applications", middleware.RequireAuth(candidateHandler.ListMyApplications)).Methods("GET")
 
 	// Candidate portal: withdraw application (JWT required, must own application)
-	router.HandleFunc("/api/candidate/applications/{id}/withdraw", candidateHandler.WithdrawApplication).Methods("PATCH")
+	router.HandleFunc("/api/candidate/applications/{id}/withdraw", middleware.RequireAuth(candidateHandler.WithdrawApplication)).Methods("PATCH")
 
 	// Delete application (candidate owns it or admin)
-	router.HandleFunc("/api/candidate/applications/{id}", candidateHandler.DeleteApplication).Methods("DELETE")
+	router.HandleFunc("/api/candidate/applications/{id}", middleware.RequireAuth(candidateHandler.DeleteApplication)).Methods("DELETE")
+
+	// ---------------------------
+	// Interview API endpoints (BE-2)
+	// Sprint 4: Interview assignment, listing, update, cancellation
+	// ---------------------------
+	interviewHandler := &handlers.InterviewHandler{DB: db}
+
+	// Create interview assignment (hiring_manager/admin only)
+	router.HandleFunc("/interviews",
+		middleware.RequireAuth(middleware.RequireRole("hiring_manager", "admin")(interviewHandler.CreateInterview)),
+	).Methods("POST")
+
+	// List interviews — hiring_manager/admin see all (optional ?application_id filter); interviewer sees own
+	router.HandleFunc("/interviews",
+		middleware.RequireAuth(middleware.RequireRole("hiring_manager", "admin", "interviewer")(interviewHandler.ListInterviews)),
+	).Methods("GET")
+
+	// Cancel interview — must be registered BEFORE /{id} to avoid path conflict
+	router.HandleFunc("/interviews/{id}/cancel",
+		middleware.RequireAuth(middleware.RequireRole("hiring_manager", "admin")(interviewHandler.CancelInterview)),
+	).Methods("PATCH")
+
+	// Get single interview (hiring_manager/admin/assigned interviewer)
+	router.HandleFunc("/interviews/{id}",
+		middleware.RequireAuth(middleware.RequireRole("hiring_manager", "admin", "interviewer")(interviewHandler.GetInterview)),
+	).Methods("GET")
+
+	// Update interview — reschedule, change type or status (hiring_manager/admin only)
+	router.HandleFunc("/interviews/{id}",
+		middleware.RequireAuth(middleware.RequireRole("hiring_manager", "admin")(interviewHandler.UpdateInterview)),
+	).Methods("PATCH")
+
+	// ---------------------------
+	// Interview Feedback API endpoints (BE-2)
+	// Sprint 4: Feedback submit/read with role and ownership checks
+	// ---------------------------
+	feedbackHandler := &handlers.InterviewFeedbackHandler{DB: db}
+
+	// Submit feedback — interviewer only, must be the assigned interviewer, write-once
+	router.HandleFunc("/interviews/{id}/feedback",
+		middleware.RequireAuth(middleware.RequireRole("interviewer")(feedbackHandler.SubmitFeedback)),
+	).Methods("POST")
+
+	// Get interview feedback — hiring_manager/admin (read-only) or the assigned interviewer
+	router.HandleFunc("/interviews/{id}/feedback",
+		middleware.RequireAuth(middleware.RequireRole("hiring_manager", "admin", "interviewer")(feedbackHandler.GetInterviewFeedback)),
+	).Methods("GET")
+
+	// Get all feedback for an application (consolidated view — hiring_manager/admin)
+	router.HandleFunc("/api/applications/{id}/feedback",
+		middleware.RequireAuth(middleware.RequireRole("hiring_manager", "admin")(feedbackHandler.GetApplicationFeedback)),
+	).Methods("GET")
 
 	// Apply CORS middleware
 	corsHandler := middleware.SetupCORS()

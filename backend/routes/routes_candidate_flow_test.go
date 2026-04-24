@@ -46,7 +46,7 @@ func TestCandidateApplyThenListApplications_HTTP(t *testing.T) {
 		t.Fatalf("apply: want 201 got %d body=%s", rrApply.Code, rrApply.Body.String())
 	}
 
-	reqList := httptest.NewRequest(http.MethodGet, "/api/candidate/applications", nil)
+	reqList := httptest.NewRequest(http.MethodGet, "/api/candidate/my-applications", nil)
 	reqList.Header.Set("Authorization", "Bearer "+token)
 	rrList := httptest.NewRecorder()
 	handler.ServeHTTP(rrList, reqList)
