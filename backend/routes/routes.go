@@ -109,6 +109,11 @@ func SetupRoutes(db *gorm.DB) http.Handler {
 		middleware.RequireAuth(middleware.RequireRole("hiring_manager", "admin")(interviewHandler.CancelInterview)),
 	).Methods("PATCH")
 
+	// Candidate resume download for an interview (assigned interviewer, hiring_manager, admin)
+	router.HandleFunc("/interviews/{id}/resume",
+		middleware.RequireAuth(middleware.RequireRole("hiring_manager", "admin", "interviewer")(interviewHandler.DownloadInterviewResume)),
+	).Methods("GET")
+
 	// Get single interview (hiring_manager/admin/assigned interviewer)
 	router.HandleFunc("/interviews/{id}",
 		middleware.RequireAuth(middleware.RequireRole("hiring_manager", "admin", "interviewer")(interviewHandler.GetInterview)),

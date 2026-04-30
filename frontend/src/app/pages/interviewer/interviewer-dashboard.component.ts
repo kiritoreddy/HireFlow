@@ -8,6 +8,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { InterviewsApiService } from '../../core/services/interviews-api.service';
 import { Interview, InterviewStatus } from '../../core/models/interview.model';
 
@@ -23,6 +25,8 @@ import { Interview, InterviewStatus } from '../../core/models/interview.model';
     MatChipsModule,
     MatProgressSpinnerModule,
     MatDividerModule,
+    MatSnackBarModule,
+    MatTooltipModule,
   ],
   templateUrl: './interviewer-dashboard.component.html',
   styleUrl: './interviewer-dashboard.component.scss',
@@ -30,6 +34,7 @@ import { Interview, InterviewStatus } from '../../core/models/interview.model';
 export class InterviewerDashboardComponent implements OnInit {
   private interviewsApi = inject(InterviewsApiService);
   private router = inject(Router);
+  private snackBar = inject(MatSnackBar);
 
   interviews: Interview[] = [];
   loading = true;
@@ -60,6 +65,25 @@ export class InterviewerDashboardComponent implements OnInit {
 
   goToFeedback(interview: Interview): void {
     this.router.navigate(['/interviewer/interviews', interview.id, 'feedback']);
+  }
+
+  downloadResume(interview: Interview, ev: Event): void {
+    ev.stopPropagation();
+    if (!interview.has_resume) return;
+    this.interviewsApi.downloadInterviewResume(interview.id).subscribe({
+      next: ({ blob, filename }) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.rel = 'noopener';
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      error: () => {
+        this.snackBar.open('Could not download resume.', 'Close', { duration: 5000 });
+      },
+    });
   }
 
   statusClass(status: InterviewStatus): string {

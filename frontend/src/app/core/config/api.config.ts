@@ -27,6 +27,8 @@ export const DASHBOARD_ENDPOINTS = {
 export const INTERVIEW_ENDPOINTS = {
   /** Interviewer portal: spec path; same data as GET /interviews for interviewer role */
   myInterviews: `${API_BASE_URL}/interviewer/assignments`,
+  /** Candidate resume file for an interview (attachment download). */
+  resumeDownload: (interviewId: number) => `${API_BASE_URL}/interviews/${interviewId}/resume`,
   byId: (id: number) => `${API_BASE_URL}/interviews/${id}`,
   feedback: (interviewId: number) => `${API_BASE_URL}/interviews/${interviewId}/feedback`,
   list: `${API_BASE_URL}/interviews`,

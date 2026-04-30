@@ -111,6 +111,25 @@
   margin-bottom: 2px;
 }
 
+.candidate-email {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+.resume-btn {
+  border-radius: 10px;
+  font-size: 12px;
+  min-height: 36px;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    margin-right: 4px;
+  }
+}
+
 .job-title {
   font-size: 14px;
   color: #475569;

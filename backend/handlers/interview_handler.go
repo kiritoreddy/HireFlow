@@ -3,7 +3,10 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"mime"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -18,6 +21,18 @@ import (
 // InterviewHandler handles all interview assignment and management endpoints.
 type InterviewHandler struct {
 	DB *gorm.DB
+}
+
+func enrichInterviewCandidateSummary(iv *models.Interview) {
+	if iv.Application.ID == 0 {
+		return
+	}
+	iv.CandidateName = strings.TrimSpace(iv.Application.Candidate.Name)
+	iv.CandidateEmail = strings.TrimSpace(iv.Application.Candidate.Email)
+	iv.HasResume = strings.TrimSpace(iv.Application.Candidate.ResumePath) != ""
+	if iv.Application.Job.ID != 0 {
+		iv.JobTitle = strings.TrimSpace(iv.Application.Job.Title)
+	}
 }
 
 // validInterviewTypes defines the allowed values for interview_type.
@@ -168,7 +183,8 @@ func (h *InterviewHandler) CreateInterview(w http.ResponseWriter, r *http.Reques
 	}
 
 	// Reload with relations for the response
-	h.DB.Preload("Application").Preload("Interviewer").First(&interview, interview.ID)
+	h.DB.Preload("Application.Candidate").Preload("Application.Job").Preload("Interviewer").First(&interview, interview.ID)
+	enrichInterviewCandidateSummary(&interview)
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(interview)
@@ -188,7 +204,7 @@ func (h *InterviewHandler) ListInterviews(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	query := h.DB.Preload("Application").Preload("Interviewer")
+	query := h.DB.Preload("Application.Candidate").Preload("Application.Job").Preload("Interviewer")
 
 	if claims.Role == "interviewer" {
 		// Interviewers only see their own assignments
@@ -211,6 +227,10 @@ func (h *InterviewHandler) ListInterviews(w http.ResponseWriter, r *http.Request
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to retrieve interviews"})
 		return
+	}
+
+	for i := range interviews {
+		enrichInterviewCandidateSummary(&interviews[i])
 	}
 
 	json.NewEncoder(w).Encode(interviews)
@@ -237,7 +257,7 @@ func (h *InterviewHandler) GetInterview(w http.ResponseWriter, r *http.Request) 
 	}
 
 	var interview models.Interview
-	if err := h.DB.Preload("Application").Preload("Interviewer").First(&interview, uint(id)).Error; err != nil {
+	if err := h.DB.Preload("Application.Candidate").Preload("Application.Job").Preload("Interviewer").First(&interview, uint(id)).Error; err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Interview not found"})
 		return
@@ -250,7 +270,80 @@ func (h *InterviewHandler) GetInterview(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	enrichInterviewCandidateSummary(&interview)
 	json.NewEncoder(w).Encode(interview)
+}
+
+// DownloadInterviewResume streams the candidate resume as an attachment (assigned interviewer, hiring_manager, or admin).
+func (h *InterviewHandler) DownloadInterviewResume(w http.ResponseWriter, r *http.Request) {
+	claims, ok := middleware.JWTClaimsFromRequest(r)
+	if !ok || claims == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Unauthorized"})
+		return
+	}
+
+	idStr := mux.Vars(r)["id"]
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid interview ID"})
+		return
+	}
+
+	var interview models.Interview
+	if err := h.DB.Preload("Application.Candidate").First(&interview, uint(id)).Error; err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Interview not found"})
+		return
+	}
+
+	if claims.Role == "interviewer" && interview.InterviewerID != claims.UserID {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Insufficient permissions"})
+		return
+	}
+	if claims.Role != "interviewer" && claims.Role != "hiring_manager" && claims.Role != "admin" {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Insufficient permissions"})
+		return
+	}
+
+	rel := strings.TrimSpace(interview.Application.Candidate.ResumePath)
+	if rel == "" {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]string{"error": "No resume on file for this candidate"})
+		return
+	}
+
+	full, err := SafeResumeFullPath(rel)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid resume path"})
+		return
+	}
+	if _, err := os.Stat(full); err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Resume file not found"})
+		return
+	}
+
+	base := filepath.Base(full)
+	ct := mime.TypeByExtension(filepath.Ext(base))
+	if ct == "" {
+		ct = "application/octet-stream"
+	}
+	w.Header().Set("Content-Type", ct)
+	w.Header().Set("Content-Disposition", "attachment; filename=\""+strings.ReplaceAll(base, "\"", "")+"\"")
+	http.ServeFile(w, r, full)
 }
 
 // UpdateInterview handles PATCH /interviews/{id}

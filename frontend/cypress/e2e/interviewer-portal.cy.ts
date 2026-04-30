@@ -1,8 +1,24 @@
 /// <reference types="cypress" />
 import { seedHireFlowLoggedIn } from '../support/session';
 
+/** Same stub as login.cy: dummy session JWT hits the real API as 401 and the auth interceptor logs out. */
+const dashboardStatsBody = {
+  totalJobs: 3,
+  openJobs: 2,
+  closedJobs: 1,
+  totalCandidates: 2,
+  totalUsers: 5,
+  departmentSummary: [{ department: 'Engineering', openCount: 2, closedCount: 0 }],
+};
+
 describe('Interviewer portal', () => {
   beforeEach(() => {
+    cy.intercept({ method: 'GET', pathname: '/dashboard/stats' }, { statusCode: 200, body: dashboardStatsBody });
+    // getInterview() chains feedback GET; unstubbed 401 clears session and lands on /login.
+    cy.intercept('GET', '**/interviews/*/feedback', {
+      statusCode: 404,
+      body: { error: 'Feedback not found for this interview' },
+    });
     cy.intercept('GET', 'http://localhost:8080/interviewer/assignments', {
       body: [
         {

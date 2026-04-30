@@ -35,6 +35,32 @@
     }
 
     <mat-card class="feedback-card">
+      @if (interview) {
+        <div class="candidate-panel">
+          <h2 class="candidate-panel-title">Candidate</h2>
+          <p class="candidate-panel-line">
+            <strong>{{ interview.candidate_name ?? 'Candidate' }}</strong>
+            @if (interview.candidate_email) {
+              <span class="candidate-email"> · {{ interview.candidate_email }}</span>
+            }
+          </p>
+          @if (interview.job_title) {
+            <p class="candidate-panel-job">{{ interview.job_title }}</p>
+          }
+          <button
+            mat-stroked-button
+            type="button"
+            class="resume-download-btn"
+            [disabled]="!interview.has_resume"
+            [matTooltip]="interview.has_resume ? 'Download resume (PDF or Word)' : 'No resume on file'"
+            (click)="downloadResume($event)"
+          >
+            <mat-icon>download</mat-icon>
+            Download resume
+          </button>
+        </div>
+      }
+
       <form (ngSubmit)="onSubmit()">
 
         <!-- Overall Rating -->

@@ -15,6 +15,9 @@ export interface Interview {
     email?: string;
   };
   candidate_name?: string;
+  candidate_email?: string;
+  /** Server indicates a resume file exists for this interview's candidate. */
+  has_resume?: boolean;
   job_title?: string;
   feedback?: InterviewFeedback;
 }

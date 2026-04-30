@@ -48,6 +48,9 @@
               <div class="candidate-name">
                 {{ interview.candidate_name ?? 'Candidate #' + interview.application_id }}
               </div>
+              @if (interview.candidate_email) {
+                <div class="candidate-email">{{ interview.candidate_email }}</div>
+              }
               <div class="job-title">{{ interview.job_title ?? 'Position' }}</div>
               <div class="meta-row">
                 <span class="meta-item">
@@ -65,6 +68,19 @@
               <span class="status-badge" [ngClass]="statusClass(interview.status)">
                 {{ statusLabel(interview.status) }}
               </span>
+
+              <button
+                mat-stroked-button
+                type="button"
+                class="resume-btn"
+                [disabled]="!interview.has_resume"
+                [matTooltip]="interview.has_resume ? 'Download resume file' : 'No resume on file'"
+                matTooltipPosition="above"
+                (click)="downloadResume(interview, $event)"
+              >
+                <mat-icon>download</mat-icon>
+                Resume
+              </button>
 
               @if (interview.status === 'SCHEDULED') {
                 <button

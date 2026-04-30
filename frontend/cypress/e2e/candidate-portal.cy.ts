@@ -5,7 +5,7 @@ describe('Candidate portal', () => {
   it('lists open jobs and links to apply', () => {
     cy.intercept('GET', 'http://localhost:8080/jobs', { fixture: 'jobs.json' }).as('jobsList');
     cy.intercept('GET', 'http://localhost:8080/jobs/1', { fixture: 'job-detail-1.json' }).as('job1');
-    cy.intercept('GET', 'http://localhost:8080/api/candidate/applications', []).as('myAppsEmpty');
+    cy.intercept('GET', 'http://localhost:8080/api/candidate/my-applications', []).as('myAppsEmpty');
     cy.visit('/portal/jobs', {
       onBeforeLoad: (win) => seedHireFlowLoggedIn(win, 'candidate'),
     });
@@ -20,7 +20,7 @@ describe('Candidate portal', () => {
 
   it('shows already applied on job detail when a non-withdrawn application exists', () => {
     cy.intercept('GET', 'http://localhost:8080/jobs/1', { fixture: 'job-detail-1.json' }).as('job1');
-    cy.intercept('GET', 'http://localhost:8080/api/candidate/applications', {
+    cy.intercept('GET', 'http://localhost:8080/api/candidate/my-applications', {
       fixture: 'my-applications.json',
     }).as('myApps');
     cy.visit('/portal/jobs/1', {
@@ -32,7 +32,7 @@ describe('Candidate portal', () => {
   });
 
   it('loads my applications', () => {
-    cy.intercept('GET', 'http://localhost:8080/api/candidate/applications', {
+    cy.intercept('GET', 'http://localhost:8080/api/candidate/my-applications', {
       fixture: 'my-applications.json',
     }).as('myApps');
     cy.visit('/portal/applications', {

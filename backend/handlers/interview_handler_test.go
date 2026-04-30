@@ -3,8 +3,11 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strconv"
 	"testing"
 
@@ -521,6 +524,97 @@ func TestGetInterview_AdminCanViewAny(t *testing.T) {
 	router.ServeHTTP(rr, req)
 	if rr.Code != http.StatusOK {
 		t.Errorf("expected 200, got %d", rr.Code)
+	}
+}
+
+// ── DownloadInterviewResume ───────────────────────────────────────────────────
+
+func TestDownloadInterviewResume_AssignedInterviewerGetsFile(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("HF_UPLOAD_ROOT", root)
+	rel := filepath.ToSlash(filepath.Join("uploads", "resumes", "e2e-resume.pdf"))
+	full := filepath.Join(root, filepath.FromSlash(rel))
+	if err := os.MkdirAll(filepath.Dir(full), 0o750); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(full, []byte("%PDF-1.4 e2e"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	db := setupInterviewTestDB(t)
+	h := &InterviewHandler{DB: db}
+	job := seedJobForInterview(t, db)
+	cand := models.Candidate{Name: "Pat Lee", Email: "pat@example.com", ResumePath: rel}
+	if err := db.Create(&cand).Error; err != nil {
+		t.Fatal(err)
+	}
+	app := models.Application{CandidateID: cand.ID, JobID: job.ID, Status: "APPLIED"}
+	if err := db.Create(&app).Error; err != nil {
+		t.Fatal(err)
+	}
+	iv := seedInterviewer(t, db)
+	interview := seedInterview(t, db, app.ID, iv.ID, "SCHEDULED")
+
+	req := httptest.NewRequest(http.MethodGet, "/interviews/"+idStr(interview.ID)+"/resume", nil)
+	req = withInterviewClaims(req, iv.ID, "interviewer")
+	router := mux.NewRouter()
+	router.HandleFunc("/interviews/{id}/resume", h.DownloadInterviewResume)
+	rr := httptest.NewRecorder()
+	router.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d body=%s", rr.Code, rr.Body.String())
+	}
+	body, _ := io.ReadAll(rr.Body)
+	if string(body) != "%PDF-1.4 e2e" {
+		t.Errorf("unexpected file body %q", string(body))
+	}
+}
+
+func TestDownloadInterviewResume_ForbiddenForOtherInterviewer(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("HF_UPLOAD_ROOT", root)
+	rel := filepath.ToSlash(filepath.Join("uploads", "resumes", "x.pdf"))
+	full := filepath.Join(root, filepath.FromSlash(rel))
+	_ = os.MkdirAll(filepath.Dir(full), 0o750)
+	_ = os.WriteFile(full, []byte("x"), 0o600)
+
+	db := setupInterviewTestDB(t)
+	h := &InterviewHandler{DB: db}
+	job := seedJobForInterview(t, db)
+	cand := models.Candidate{Name: "A", Email: "a@e.com", ResumePath: rel}
+	db.Create(&cand)
+	app := models.Application{CandidateID: cand.ID, JobID: job.ID, Status: "APPLIED"}
+	db.Create(&app)
+	iv := seedInterviewer(t, db)
+	interview := seedInterview(t, db, app.ID, iv.ID, "SCHEDULED")
+
+	req := httptest.NewRequest(http.MethodGet, "/interviews/"+idStr(interview.ID)+"/resume", nil)
+	req = withInterviewClaims(req, iv.ID+999, "interviewer")
+	router := mux.NewRouter()
+	router.HandleFunc("/interviews/{id}/resume", h.DownloadInterviewResume)
+	rr := httptest.NewRecorder()
+	router.ServeHTTP(rr, req)
+	if rr.Code != http.StatusForbidden {
+		t.Errorf("expected 403, got %d", rr.Code)
+	}
+}
+
+func TestDownloadInterviewResume_NoResumeOnFile(t *testing.T) {
+	db := setupInterviewTestDB(t)
+	h := &InterviewHandler{DB: db}
+	job := seedJobForInterview(t, db)
+	app := seedApplicationForInterview(t, db, job.ID)
+	iv := seedInterviewer(t, db)
+	interview := seedInterview(t, db, app.ID, iv.ID, "SCHEDULED")
+
+	req := httptest.NewRequest(http.MethodGet, "/interviews/"+idStr(interview.ID)+"/resume", nil)
+	req = withInterviewClaims(req, iv.ID, "interviewer")
+	router := mux.NewRouter()
+	router.HandleFunc("/interviews/{id}/resume", h.DownloadInterviewResume)
+	rr := httptest.NewRecorder()
+	router.ServeHTTP(rr, req)
+	if rr.Code != http.StatusNotFound {
+		t.Errorf("expected 404, got %d", rr.Code)
 	}
 }
 

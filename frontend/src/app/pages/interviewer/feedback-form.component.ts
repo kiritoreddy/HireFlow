@@ -9,6 +9,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { InterviewsApiService, FeedbackResult } from '../../core/services/interviews-api.service';
 import { Interview, FeedbackSubmit, Recommendation } from '../../core/models/interview.model';
 
@@ -25,6 +26,7 @@ import { Interview, FeedbackSubmit, Recommendation } from '../../core/models/int
     MatSelectModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
+    MatTooltipModule,
   ],
   templateUrl: './feedback-form.component.html',
   styleUrl: './feedback-form.component.scss',
@@ -118,5 +120,25 @@ export class FeedbackFormComponent implements OnInit {
 
   scoreLabel(score: number): string {
     return ['', 'Poor', 'Below Average', 'Average', 'Good', 'Excellent'][score] ?? '';
+  }
+
+  downloadResume(ev: Event): void {
+    ev.preventDefault();
+    const iv = this.interview;
+    if (!iv?.has_resume) return;
+    this.interviewsApi.downloadInterviewResume(iv.id).subscribe({
+      next: ({ blob, filename }) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.rel = 'noopener';
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      error: () => {
+        this.snackBar.open('Could not download resume.', 'Close', { duration: 5000 });
+      },
+    });
   }
 }

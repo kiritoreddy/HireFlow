@@ -101,3 +101,20 @@ func storeResumeFile(f multipart.File, hdr *multipart.FileHeader) (string, error
 
 	return filepath.ToSlash(filepath.Join(relDir, storedName)), nil
 }
+
+// SafeResumeFullPath resolves a stored relative resume path under uploads/resumes/ to an absolute path.
+func SafeResumeFullPath(rel string) (string, error) {
+	s := strings.TrimSpace(rel)
+	if s == "" {
+		return "", errors.New("empty resume path")
+	}
+	s = filepath.ToSlash(filepath.Clean(s))
+	if strings.Contains(s, "..") {
+		return "", errors.New("invalid resume path")
+	}
+	const prefix = "uploads/resumes/"
+	if !strings.HasPrefix(s, prefix) {
+		return "", errors.New("invalid resume path")
+	}
+	return filepath.Join(resumeUploadRoot(), filepath.FromSlash(s)), nil
+}

@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
 import { Observable, catchError, map, of, switchMap, throwError, timeout } from 'rxjs';
 import { Interview, InterviewFeedback, FeedbackSubmit } from '../models/interview.model';
 import { INTERVIEW_ENDPOINTS, USERS_ENDPOINTS } from '../config/api.config';
@@ -111,6 +111,35 @@ export class InterviewsApiService {
       ),
       catchError(() => of(null))
     );
+  }
+
+  /** Download candidate resume for this interview (blob + suggested filename). */
+  downloadInterviewResume(interviewId: number): Observable<{ blob: Blob; filename: string }> {
+    return this.http
+      .get(INTERVIEW_ENDPOINTS.resumeDownload(interviewId), {
+        responseType: 'blob',
+        observe: 'response',
+      })
+      .pipe(
+        map((res: HttpResponse<Blob>) => {
+          const body = res.body;
+          if (!body) {
+            throw new Error('Empty response');
+          }
+          let filename = `resume-interview-${interviewId}`;
+          const cd = res.headers.get('content-disposition');
+          if (cd) {
+            const star = /filename\*=(?:UTF-8'')?([^;]+)/i.exec(cd);
+            const plain = /filename="([^"]+)"/i.exec(cd);
+            if (star?.[1]) {
+              filename = decodeURIComponent(star[1].trim().replace(/^"|"$/g, ''));
+            } else if (plain?.[1]) {
+              filename = plain[1];
+            }
+          }
+          return { blob: body, filename };
+        })
+      );
   }
 
   getInterviewFeedback(interviewId: number): Observable<InterviewFeedback | null> {
