@@ -80,11 +80,9 @@
           <span class="divider-line"></span>
         </div>
 
-        <!-- Google Identity Services renders here when configured -->
-        @if (googleAvailable) {
-          <div id="google-signin-btn" class="gis-btn-container"></div>
-        } @else {
-          <!-- Fallback button shown when GIS not configured -->
+        <!-- Host must always exist in DOM so GIS can renderButton; do not gate on googleAvailable -->
+        <div id="google-signin-btn" class="gis-btn-container"></div>
+        @if (!googleAvailable) {
           <button
             mat-stroked-button
             type="button"

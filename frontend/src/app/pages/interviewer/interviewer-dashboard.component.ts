@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { DatePipe, NgClass } from '@angular/common';
+import { finalize } from 'rxjs';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -39,16 +40,22 @@ export class InterviewerDashboardComponent implements OnInit {
   get cancelled() { return this.interviews.filter(i => i.status === 'CANCELLED'); }
 
   ngOnInit(): void {
-    this.interviewsApi.getMyInterviews().subscribe({
-      next: (data) => {
-        this.interviews = data;
-        this.loading = false;
-      },
-      error: () => {
-        this.error = 'Failed to load interviews. Please try again.';
-        this.loading = false;
-      },
-    });
+    this.loading = true;
+    this.error = '';
+    this.interviewsApi
+      .getMyInterviews()
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe({
+        next: (data) => {
+          this.interviews = data;
+        },
+        error: (err: unknown) => {
+          this.error =
+            err instanceof Error && err.message
+              ? err.message
+              : 'Failed to load interviews. Please try again.';
+        },
+      });
   }
 
   goToFeedback(interview: Interview): void {

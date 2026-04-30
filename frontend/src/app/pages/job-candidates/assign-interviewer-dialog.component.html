@@ -1,36 +1,100 @@
-<h2 mat-dialog-title>Assign Interviewer</h2>
+<h2 mat-dialog-title class="dialog-title">Assign interviewer</h2>
 
-<mat-dialog-content>
-  <p>Assign an interviewer for {{ data.candidateName }}.</p>
+<mat-dialog-content class="dialog-content">
+  <p class="intro">Schedule for <strong>{{ data.candidateName }}</strong>.</p>
 
-  <mat-form-field appearance="outline" class="w-full">
-    <mat-label>Interviewer</mat-label>
-    <mat-select [(ngModel)]="interviewerId" required>
-      @for (interviewer of data.interviewers; track interviewer.id) {
-        <mat-option [value]="interviewer.id">
-          {{ interviewer.firstName }} {{ interviewer.lastName }} ({{ interviewer.email }})
-        </mat-option>
+  <div class="fields-stack">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Interviewer</mat-label>
+      <mat-select [(ngModel)]="interviewerId" required (ngModelChange)="onInterviewerChange()">
+        @for (interviewer of data.interviewers; track interviewer.id) {
+          <mat-option [value]="interviewer.id">
+            {{ interviewer.firstName }} {{ interviewer.lastName }} ({{ interviewer.email }})
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Date</mat-label>
+      <input
+        matInput
+        [matDatepicker]="picker"
+        [(ngModel)]="selectedDate"
+        (ngModelChange)="onDateChange()"
+        [min]="minDate"
+        required
+      />
+      <mat-datepicker-toggle matIconSuffix [for]="picker" />
+      <mat-datepicker #picker />
+    </mat-form-field>
+  </div>
+
+  <section class="slots-card" aria-labelledby="slots-heading">
+    <div class="slots-card-header">
+      <h3 id="slots-heading" class="slots-heading">Time slot</h3>
+      <span class="slots-sub">Local time · 9:00–17:00 · 1 hour each</span>
+    </div>
+    <p class="slots-hint">
+      Unavailable slots are already booked for the interviewer you selected (scheduled interviews only).
+    </p>
+
+    <div class="slots-toolbar" [class.slots-toolbar--loading]="loadingSlots">
+      @if (loadingSlots) {
+        <mat-spinner diameter="22" />
+        <span class="slots-loading-label">Loading schedule…</span>
       }
-    </mat-select>
-  </mat-form-field>
+    </div>
 
-  <mat-form-field appearance="outline" class="w-full">
-    <mat-label>Scheduled Date (RFC3339 UTC)</mat-label>
-    <input matInput [(ngModel)]="scheduledDate" placeholder="2026-05-01T10:00:00Z" required />
-  </mat-form-field>
+    @if (slotsLoadFailed) {
+      <p class="warn-text">Could not load existing interviews. Availability may be incomplete.</p>
+    }
 
-  <mat-form-field appearance="outline" class="w-full">
-    <mat-label>Interview Type</mat-label>
-    <mat-select [(ngModel)]="interviewType" required>
-      <mat-option value="TECHNICAL">Technical</mat-option>
-      <mat-option value="BEHAVIORAL">Behavioral</mat-option>
-      <mat-option value="HR">HR</mat-option>
-      <mat-option value="SYSTEM_DESIGN">System Design</mat-option>
-    </mat-select>
-  </mat-form-field>
+    @if (canPickSlots) {
+      <div class="slots-grid" role="list">
+        @for (slot of slotOptions; track slot.startHour) {
+          <button
+            type="button"
+            mat-stroked-button
+            class="slot-btn"
+            [class.slot-btn--busy]="slot.occupied"
+            [class.slot-btn--selected]="isSlotSelected(slot)"
+            [disabled]="slot.occupied"
+            (click)="selectSlot(slot)"
+          >
+            {{ slot.label }}
+          </button>
+        }
+      </div>
+    } @else if (!loadingSlots && interviewerId && !selectedDate) {
+      <p class="slots-placeholder">Pick a date to see available slots.</p>
+    } @else if (!loadingSlots && !interviewerId) {
+      <p class="slots-placeholder">Choose an interviewer to see available slots.</p>
+    }
+  </section>
+
+  <div class="fields-stack">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Interview type</mat-label>
+      <mat-select [(ngModel)]="interviewType" required>
+        <mat-option value="TECHNICAL">Technical</mat-option>
+        <mat-option value="BEHAVIORAL">Behavioral</mat-option>
+        <mat-option value="HR">HR</mat-option>
+        <mat-option value="SYSTEM_DESIGN">System Design</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
 </mat-dialog-content>
 
-<mat-dialog-actions align="end">
-  <button mat-button mat-dialog-close>Cancel</button>
-  <button mat-flat-button color="primary" (click)="submit()" [disabled]="!interviewerId || !scheduledDate || !interviewType">Assign</button>
+<mat-dialog-actions class="dialog-actions" align="end">
+  <button mat-button mat-dialog-close type="button">Cancel</button>
+  <button
+    mat-flat-button
+    color="primary"
+    type="button"
+    (click)="submit()"
+    [disabled]="!interviewerId || !scheduledDate || !interviewType"
+  >
+    Assign
+  </button>
 </mat-dialog-actions>

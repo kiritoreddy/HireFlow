@@ -8,11 +8,47 @@
     <div class="feedback-list">
       @for (item of data.feedback; track item.id) {
         <div class="feedback-card">
-          <p><strong>Interviewer:</strong> {{ item.interview?.interviewer?.name || ('Interviewer #' + item.interviewer_id) }}</p>
-          <p><strong>Overall:</strong> {{ item.rating }}/5</p>
-          <p><strong>Technical:</strong> {{ item.technical_score }}/5</p>
-          <p><strong>Communication:</strong> {{ item.communication }}/5</p>
-          <p><strong>Recommendation:</strong> {{ item.recommendation }}</p>
+          <p>
+            <strong>Interviewer:</strong>
+            {{ item.interview?.interviewer?.name || ('Interviewer #' + item.interviewer_id) }}
+          </p>
+
+          <div class="score-row">
+            <span class="score-label">Overall</span>
+            <span class="stars" [attr.aria-label]="'Overall rating ' + item.rating + ' of 5'">
+              @for (s of starIndices; track s) {
+                <mat-icon [class.filled]="s <= item.rating" class="star-icon">star</mat-icon>
+              }
+            </span>
+          </div>
+
+          <div class="score-row">
+            <span class="score-label">Technical</span>
+            <span class="stars" [attr.aria-label]="'Technical ' + item.technical_score + ' of 5'">
+              @for (s of starIndices; track s) {
+                <mat-icon [class.filled]="s <= item.technical_score" class="star-icon">star</mat-icon>
+              }
+            </span>
+          </div>
+
+          <div class="score-row">
+            <span class="score-label">Communication</span>
+            <span class="stars" [attr.aria-label]="'Communication ' + item.communication + ' of 5'">
+              @for (s of starIndices; track s) {
+                <mat-icon [class.filled]="s <= item.communication" class="star-icon">star</mat-icon>
+              }
+            </span>
+          </div>
+
+          <div class="rec-row">
+            <span class="score-label">Recommendation</span>
+            <mat-chip-set class="rec-chips">
+              <mat-chip [class]="recommendationChipClass(item.recommendation)">
+                {{ recommendationLabel(item.recommendation) }}
+              </mat-chip>
+            </mat-chip-set>
+          </div>
+
           @if (item.comments) {
             <p><strong>Comments:</strong> {{ item.comments }}</p>
           }

@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 
+	"backend/middleware"
 	"backend/models"
 
 	"github.com/gorilla/mux"
@@ -39,29 +41,46 @@ type SetActiveRequest struct {
 	IsActive *bool `json:"is_active"`
 }
 
-// ListUsers returns all users or filters by role query param (admin only).
-// GET /users           → returns all users
-// GET /users?role=interviewer → returns only interviewers
-// Added Sprint 4: role query parameter filtering for interviewer assignment dropdown
+// ListUsers returns all users or filters by role query param.
+// GET /users → all users (admin only).
+// GET /users?role=interviewer → interviewers (admin or hiring_manager for assignment dropdown).
 func (h *UserHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	claims, ok := middleware.JWTClaimsFromRequest(r)
+	if !ok || claims == nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Unauthorized"})
+		return
+	}
+
+	roleFilter := strings.TrimSpace(r.URL.Query().Get("role"))
+
+	switch claims.Role {
+	case "admin":
+		// full access
+	case "hiring_manager":
+		if !strings.EqualFold(roleFilter, "interviewer") {
+			w.WriteHeader(http.StatusForbidden)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Insufficient permissions"})
+			return
+		}
+	default:
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Insufficient permissions"})
+		return
+	}
+
 	var users []models.User
 
-	// Check for optional role query parameter
-	// Used by FE-2 to populate interviewer assignment dropdown
-	roleFilter := r.URL.Query().Get("role")
-
 	if roleFilter != "" {
-		// Filter by role if provided
-		if err := h.DB.Order("id").Where("role = ?", roleFilter).Find(&users).Error; err != nil {
-			w.Header().Set("Content-Type", "application/json")
+		if err := h.DB.Order("id").Where("LOWER(role) = LOWER(?)", roleFilter).Find(&users).Error; err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": "Failed to list users"})
 			return
 		}
 	} else {
-		// Return all users if no role filter
 		if err := h.DB.Order("id").Find(&users).Error; err != nil {
-			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": "Failed to list users"})
 			return
@@ -80,7 +99,6 @@ func (h *UserHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(list)
 }

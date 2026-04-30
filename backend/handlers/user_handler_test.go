@@ -2,12 +2,12 @@ package handlers
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"backend/middleware"
 	"backend/models"
 	"backend/utils"
 
@@ -15,16 +15,22 @@ import (
 )
 
 // injectAdminClaims injects admin JWT claims into request context
-// Uses string key directly to avoid cross-package contextKey dependency
 func injectAdminClaims(r *http.Request) *http.Request {
 	claims := &utils.JWTClaims{
 		UserID: 1,
 		Email:  "admin@test.com",
 		Role:   "admin",
 	}
-	// Use the same string key defined in middleware/auth.go
-	ctx := context.WithValue(r.Context(), "jwt_claims", claims)
-	return r.WithContext(ctx)
+	return r.WithContext(middleware.ContextWithClaims(r.Context(), claims))
+}
+
+func injectHiringManagerClaims(r *http.Request) *http.Request {
+	claims := &utils.JWTClaims{
+		UserID: 2,
+		Email:  "manager@test.com",
+		Role:   "hiring_manager",
+	}
+	return r.WithContext(middleware.ContextWithClaims(r.Context(), claims))
 }
 
 // ─── ListUsers Tests ──────────────────────────────────────────────────────────
@@ -83,6 +89,48 @@ func TestListUsers_EmptyList(t *testing.T) {
 	json.NewDecoder(rr.Body).Decode(&users)
 	if len(users) != 0 {
 		t.Errorf("Expected empty list, got %d users", len(users))
+	}
+}
+
+// TestListUsers_HiringManager_InterviewersOnly allows hiring_manager to list interviewers
+func TestListUsers_HiringManager_InterviewersOnly(t *testing.T) {
+	db := setupTestDB(t)
+	handler := &UserHandler{DB: db}
+
+	iv := models.User{Name: "Interviewer One", Email: "iv@example.com", Role: "interviewer", IsActive: true}
+	iv.HashPassword("SecurePass123!")
+	db.Create(&iv)
+	mgr := models.User{Name: "Mgr", Email: "mgr@example.com", Role: "hiring_manager", IsActive: true}
+	mgr.HashPassword("SecurePass123!")
+	db.Create(&mgr)
+
+	req, _ := http.NewRequest(http.MethodGet, "/users?role=interviewer", nil)
+	req = injectHiringManagerClaims(req)
+	rr := httptest.NewRecorder()
+	handler.ListUsers(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("Expected 200, got %d: %s", rr.Code, rr.Body.String())
+	}
+	var users []UserListResponse
+	json.NewDecoder(rr.Body).Decode(&users)
+	if len(users) != 1 || users[0].Email != "iv@example.com" {
+		t.Errorf("Expected one interviewer, got %+v", users)
+	}
+}
+
+// TestListUsers_HiringManager_ForbiddenFullList denies hiring_manager full user list
+func TestListUsers_HiringManager_ForbiddenFullList(t *testing.T) {
+	db := setupTestDB(t)
+	handler := &UserHandler{DB: db}
+
+	req, _ := http.NewRequest(http.MethodGet, "/users", nil)
+	req = injectHiringManagerClaims(req)
+	rr := httptest.NewRecorder()
+	handler.ListUsers(rr, req)
+
+	if rr.Code != http.StatusForbidden {
+		t.Errorf("Expected 403, got %d", rr.Code)
 	}
 }
 

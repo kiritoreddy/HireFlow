@@ -30,8 +30,8 @@ type GoogleAuthRequest struct {
 func getGoogleClientID() string {
     clientID := os.Getenv("GOOGLE_CLIENT_ID")
     if clientID == "" {
-        // Development fallback - set GOOGLE_CLIENT_ID in production environment
-        return "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
+        // Default dev client; override with GOOGLE_CLIENT_ID in production
+        return "620993037874-kef8j1h65lhcdthdhigf5503n27ak8l7.apps.googleusercontent.com"
     }
     return clientID
 }

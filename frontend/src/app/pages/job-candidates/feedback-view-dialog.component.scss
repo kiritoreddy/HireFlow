@@ -1,0 +1,70 @@
+.feedback-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.feedback-card {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #fafafa;
+}
+
+.score-row,
+.rec-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 8px 0;
+}
+
+.score-label {
+  min-width: 110px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475467;
+}
+
+.stars {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.star-icon {
+  width: 22px;
+  height: 22px;
+  font-size: 22px;
+  color: #e5e7eb;
+  line-height: 22px;
+
+  &.filled {
+    color: #f59e0b;
+  }
+}
+
+.rec-chips ::ng-deep .mat-mdc-chip {
+  font-weight: 600;
+}
+
+.rec-strong-hire {
+  --mdc-chip-elevated-container-color: #dcfce7;
+  --mdc-chip-label-text-color: #166534;
+}
+
+.rec-hire {
+  --mdc-chip-elevated-container-color: #dbeafe;
+  --mdc-chip-label-text-color: #1e40af;
+}
+
+.rec-no-hire {
+  --mdc-chip-elevated-container-color: #ffedd5;
+  --mdc-chip-label-text-color: #9a3412;
+}
+
+.rec-strong-no-hire {
+  --mdc-chip-elevated-container-color: #fee2e2;
+  --mdc-chip-label-text-color: #991b1b;
+}

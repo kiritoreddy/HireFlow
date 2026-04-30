@@ -93,6 +93,7 @@ describe('JobCandidatesComponent', () => {
 
     component = TestBed.createComponent(JobCandidatesComponent).componentInstance;
     (component as unknown as { dialog: { open: typeof dialogSpy.open } }).dialog = dialogSpy;
+    (component as unknown as { snackBar: typeof snackBarSpy }).snackBar = snackBarSpy;
     component.ngOnInit();
   };
 
@@ -101,6 +102,14 @@ describe('JobCandidatesComponent', () => {
 
     it('should create', () => {
       expect(component).toBeTruthy();
+    });
+
+    it('truncateResume shortens long filenames', () => {
+      const long = 'a'.repeat(50) + '.pdf';
+      expect(component.truncateResume(long, 36).length).toBeLessThanOrEqual(36);
+      expect(component.truncateResume(long, 36).endsWith('…')).toBe(true);
+      expect(component.truncateResume('cv.pdf', 36)).toBe('cv.pdf');
+      expect(component.truncateResume('  ', 36)).toBe('—');
     });
 
     it('should load the correct job title from API', () => {
@@ -188,10 +197,19 @@ describe('JobCandidatesComponent', () => {
       expect(component.getInterviewStatus(candidate)).toBe('Completed');
     });
 
-    it('should open feedback dialog', () => {
+    it('should open feedback dialog when an interview exists', () => {
       const candidate = component.dataSource.data.find((c) => c.id === 'c1')!;
+      expect(component.hasInterviewAssignment(candidate)).toBe(true);
       component.openFeedback(candidate);
       expect(dialogSpy.open).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not open feedback dialog when no interview is assigned', () => {
+      const candidate = component.dataSource.data.find((c) => c.id === 'c2')!;
+      expect(component.hasInterviewAssignment(candidate)).toBe(false);
+      component.openFeedback(candidate);
+      expect(dialogSpy.open).not.toHaveBeenCalled();
+      expect(snackBarSpy.open).toHaveBeenCalled();
     });
 
     it('should assign interviewer from dialog result', () => {

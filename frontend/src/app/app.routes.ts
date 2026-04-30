@@ -4,7 +4,7 @@ import { AppLayoutComponent } from './layout/app-layout.component';
 import { HomeRedirectComponent } from './pages/home-redirect/home-redirect.component';
 import { authGuard } from './core/auth/auth.guard';
 import { adminGuard } from './core/auth/admin.guard';
-import { hiringOnlyGuard, candidateGuard } from './core/auth/candidate.guard';
+import { hiringOnlyGuard, hiringManagerAdminGuard, candidateGuard } from './core/auth/candidate.guard';
 import { interviewerGuard } from './core/auth/interviewer.guard';
 
 export const routes: Routes = [
@@ -56,22 +56,22 @@ export const routes: Routes = [
           import('./pages/interviewer/feedback-form.component').then(m => m.FeedbackFormComponent),
       },
 
-      // Hiring manager routes
+      // Hiring manager + admin (pipeline uses GET /users?role=interviewer — forbidden for interviewer role)
       {
         path: 'candidates',
-        canActivate: [hiringOnlyGuard],
+        canActivate: [hiringManagerAdminGuard],
         loadComponent: () =>
           import('./pages/candidates/candidates-overview.component').then(m => m.CandidatesOverviewComponent),
       },
       {
         path: 'jobs/:id/candidates',
-        canActivate: [hiringOnlyGuard],
+        canActivate: [hiringManagerAdminGuard],
         loadComponent: () =>
           import('./pages/job-candidates/job-candidates.component').then(m => m.JobCandidatesComponent),
       },
       {
         path: 'jobs',
-        canActivate: [hiringOnlyGuard],
+        canActivate: [hiringManagerAdminGuard],
         loadComponent: () => import('./pages/jobs/jobs.component').then(m => m.JobsComponent),
       },
       {

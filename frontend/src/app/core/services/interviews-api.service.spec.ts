@@ -50,8 +50,17 @@ describe('InterviewsApiService', () => {
       .subscribe((result) => expect(result).toBeUndefined());
     const req = http.expectOne(INTERVIEW_ENDPOINTS.create);
     expect(req.request.method).toBe('POST');
-    expect(req.request.body.application_id).toBe('10');
+    expect(req.request.body.application_id).toBe(10);
+    expect(req.request.body.interviewer_id).toBe(5);
     req.flush({});
+  });
+
+  it('listAllInterviews() returns interviews from GET /interviews', () => {
+    let result: Interview[] = [];
+    service.listAllInterviews().subscribe((data) => (result = data));
+    http.expectOne(INTERVIEW_ENDPOINTS.list).flush([mockInterview]);
+    expect(result.length).toBe(1);
+    expect(result[0].id).toBe(1);
   });
 
   it('listByApplication() returns [] on error', () => {
@@ -72,9 +81,6 @@ describe('InterviewsApiService', () => {
     let result: Interview[] = [];
     service.getMyInterviews().subscribe((data) => (result = data));
     http.expectOne(INTERVIEW_ENDPOINTS.myInterviews).flush([mockInterview]);
-    http.expectOne(INTERVIEW_ENDPOINTS.feedback(1)).flush(
-      { id: 1, interview_id: 1, interviewer_id: 3, rating: 4, technical_score: 4, communication: 3, recommendation: 'HIRE', submitted_at: '2026-05-01T11:00:00Z' }
-    );
     expect(result.length).toBe(1);
     expect(result[0].candidate_name).toBe('Jane Doe');
   });

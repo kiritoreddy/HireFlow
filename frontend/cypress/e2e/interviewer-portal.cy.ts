@@ -3,7 +3,7 @@ import { seedHireFlowLoggedIn } from '../support/session';
 
 describe('Interviewer portal', () => {
   beforeEach(() => {
-    cy.intercept('GET', 'http://localhost:8080/interviews/my', {
+    cy.intercept('GET', 'http://localhost:8080/interviewer/assignments', {
       body: [
         {
           id: 1,

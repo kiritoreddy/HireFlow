@@ -8,6 +8,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../core/auth/auth.service';
+import { GOOGLE_CLIENT_ID } from '../../core/config/google-client.config';
 
 // Google Identity Services type declaration
 declare const google: {
@@ -23,9 +24,6 @@ declare const google: {
     };
   };
 };
-
-// Replace with your actual Google OAuth Client ID
-const GOOGLE_CLIENT_ID = ''; // TODO: set your Google OAuth Client ID here
 
 @Component({
   selector: 'app-login',
@@ -53,6 +51,9 @@ export class LoginComponent implements OnInit, AfterViewInit {
   hidePassword = true;
   googleAvailable = false;
 
+  private googleInitAttempts = 0;
+  private readonly maxGoogleInitAttempts = 50;
+
   constructor(
     private auth: AuthService,
     private router: Router,
@@ -69,20 +70,31 @@ export class LoginComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
+    // GIS script is loaded async from index.html; retry until `google` exists
+    this.scheduleGoogleInit();
+  }
+
+  private scheduleGoogleInit(): void {
+    if (!GOOGLE_CLIENT_ID) return;
+
+    if (typeof google === 'undefined') {
+      this.googleInitAttempts++;
+      if (this.googleInitAttempts < this.maxGoogleInitAttempts) {
+        setTimeout(() => this.zone.run(() => this.scheduleGoogleInit()), 100);
+      }
+      return;
+    }
+
     this.initGoogleSignIn();
   }
 
   private initGoogleSignIn(): void {
-    // Only initialize if GIS script loaded and Client ID is configured
-    if (typeof google === 'undefined' || !GOOGLE_CLIENT_ID) {
-      return;
-    }
+    if (typeof google === 'undefined' || !GOOGLE_CLIENT_ID) return;
 
     try {
       google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: (response) => {
-          // Run inside Angular zone so change detection fires
           this.zone.run(() => this.handleGoogleCredential(response.credential));
         },
         auto_select: false,
@@ -90,6 +102,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
 
       const btnEl = document.getElementById('google-signin-btn');
       if (btnEl) {
+        btnEl.replaceChildren();
         google.accounts.id.renderButton(btnEl, {
           theme: 'outline',
           size: 'large',
@@ -101,7 +114,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
         this.cdr.detectChanges();
       }
     } catch {
-      // GIS not available — fallback button shown
+      // Keep fallback button; user can use signInWithGoogle()
     }
   }
 
@@ -142,10 +155,27 @@ export class LoginComponent implements OnInit, AfterViewInit {
   }
 
   signInWithGoogle(): void {
-    if (typeof google !== 'undefined' && GOOGLE_CLIENT_ID) {
-      google.accounts.id.prompt();
-    } else {
+    this.error = '';
+    if (!GOOGLE_CLIENT_ID) {
       this.error = 'Google Sign-In is not configured yet. Please use email and password.';
+      return;
+    }
+    if (typeof google === 'undefined') {
+      this.error =
+        'Google script is still loading. Wait a few seconds and try again, or refresh the page.';
+      return;
+    }
+    try {
+      google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: (response) => {
+          this.zone.run(() => this.handleGoogleCredential(response.credential));
+        },
+        auto_select: false,
+      });
+      google.accounts.id.prompt();
+    } catch {
+      this.error = 'Could not start Google sign-in. Please try again.';
     }
   }
 }

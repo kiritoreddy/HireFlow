@@ -49,6 +49,11 @@
     </mat-form-field>
   </div>
 
+  <p class="pipeline-hint">
+    When no interviewer is set, use <strong>Assign interviewer</strong> in that column, or open the <strong>⋮</strong> menu
+    next to the candidate name to assign, change stage, or remove.
+  </p>
+
   @if (loading()) {
     <div class="loading-row">
       <mat-spinner diameter="40"></mat-spinner>
@@ -61,6 +66,24 @@
           <th mat-header-cell *matHeaderCellDef>Name</th>
           <td mat-cell *matCellDef="let row">
             <div class="candidate-name">{{ row.name }}</div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef class="actions-header">
+            <span class="actions-header-label" matTooltip="Row menu">Menu</span>
+          </th>
+          <td mat-cell *matCellDef="let row" class="actions-cell">
+            <button
+              mat-icon-button
+              type="button"
+              [matMenuTriggerFor]="candidateRowMenu"
+              [matMenuTriggerData]="{ row: row }"
+              aria-label="Candidate row menu"
+              matTooltip="Assign interviewer, change stage, remove"
+            >
+              <mat-icon>more_vert</mat-icon>
+            </button>
           </td>
         </ng-container>
 
@@ -83,17 +106,27 @@
         <ng-container matColumnDef="resume">
           <th mat-header-cell *matHeaderCellDef>Resume</th>
           <td mat-cell *matCellDef="let row">
-            <a href="javascript:void(0)" class="resume-link">
+            <a href="javascript:void(0)" class="resume-link" [title]="row.resume || ''">
               <mat-icon>description</mat-icon>
-              <span>{{ row.resume }}</span>
+              <span class="resume-filename">{{ truncateResume(row.resume) }}</span>
             </a>
           </td>
         </ng-container>
 
         <ng-container matColumnDef="assignedInterviewer">
-          <th mat-header-cell *matHeaderCellDef>Assigned Interviewer</th>
-          <td mat-cell *matCellDef="let row">
-            {{ getAssignedInterviewers(row) }}
+          <th mat-header-cell *matHeaderCellDef>Assigned interviewer</th>
+          <td mat-cell *matCellDef="let row" class="assigned-cell">
+            <span class="assigned-text">{{ getAssignedInterviewers(row) }}</span>
+            @if (!hasInterviewAssignment(row)) {
+              <button
+                mat-flat-button
+                color="primary"
+                class="assign-inline-btn"
+                (click)="openAssignInterviewerDialog(row)"
+              >
+                Assign interviewer
+              </button>
+            }
           </td>
         </ng-container>
 
@@ -108,10 +141,17 @@
 
         <ng-container matColumnDef="feedback">
           <th mat-header-cell *matHeaderCellDef>Feedback</th>
-          <td mat-cell *matCellDef="let row">
-            <button mat-stroked-button (click)="openFeedback(row)">
-              {{ hasFeedback(row) ? 'View Feedback' : 'Awaiting Feedback' }}
-            </button>
+          <td mat-cell *matCellDef="let row" class="feedback-cell">
+            @if (!hasInterviewAssignment(row)) {
+              <span
+                class="feedback-na"
+                matTooltip="Use Assign interviewer in that column, or the ⋮ menu next to the name"
+                >No interview yet</span>
+            } @else if (hasFeedback(row)) {
+              <button mat-stroked-button color="primary" (click)="openFeedback(row)">View feedback</button>
+            } @else {
+              <button mat-stroked-button (click)="openFeedback(row)">Awaiting feedback</button>
+            }
           </td>
         </ng-container>
 
@@ -128,34 +168,6 @@
           </td>
         </ng-container>
 
-        <ng-container matColumnDef="actions">
-          <th mat-header-cell *matHeaderCellDef></th>
-          <td mat-cell *matCellDef="let row">
-            <button mat-icon-button [matMenuTriggerFor]="candidateMenu" aria-label="Candidate actions">
-              <mat-icon>more_horiz</mat-icon>
-            </button>
-
-            <mat-menu #candidateMenu="matMenu">
-              <button mat-menu-item (click)="openAssignInterviewerDialog(row)">
-                <mat-icon>person_add</mat-icon>
-                <span>Assign Interviewer</span>
-              </button>
-              @for (s of stages; track s) {
-                @if (s !== row.stage) {
-                  <button mat-menu-item (click)="onStageChange(row, s)">
-                    <mat-icon>swap_horiz</mat-icon>
-                    <span>Move to {{ s }}</span>
-                  </button>
-                }
-              }
-              <button mat-menu-item class="delete-item" (click)="deleteCandidate(row)">
-                <mat-icon>person_remove</mat-icon>
-                <span>Remove Candidate</span>
-              </button>
-            </mat-menu>
-          </td>
-        </ng-container>
-
         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
         <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
 
@@ -163,6 +175,30 @@
           <td class="mat-cell" [attr.colspan]="displayedColumns.length">No candidates found.</td>
         </tr>
       </table>
+
+      <!-- One shared menu (per-row menus caused overlay / layout glitches in the table) -->
+      <mat-menu #candidateRowMenu="matMenu">
+        <ng-template matMenuContent let-row="row">
+          @if (row) {
+            <button mat-menu-item type="button" (click)="openAssignInterviewerDialog(row)">
+              <mat-icon>person_add</mat-icon>
+              <span>Assign interviewer</span>
+            </button>
+            @for (s of stages; track s) {
+              @if (s !== row.stage) {
+                <button mat-menu-item type="button" (click)="onStageChange(row, s)">
+                  <mat-icon>swap_horiz</mat-icon>
+                  <span>Move to {{ s }}</span>
+                </button>
+              }
+            }
+            <button mat-menu-item type="button" class="delete-item" (click)="deleteCandidate(row)">
+              <mat-icon>person_remove</mat-icon>
+              <span>Remove candidate</span>
+            </button>
+          }
+        </ng-template>
+      </mat-menu>
     </div>
   }
 </div>

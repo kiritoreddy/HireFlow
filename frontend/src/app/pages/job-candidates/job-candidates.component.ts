@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
@@ -12,6 +13,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { AddCandidateDialogComponent } from './add-candidate-dialog.component';
 import { AssignInterviewerDialogComponent } from './assign-interviewer-dialog.component';
 import { FeedbackViewDialogComponent } from './feedback-view-dialog.component';
@@ -42,6 +44,7 @@ type CandidateFilter = 'All' | CandidateStage;
     MatSnackBarModule,
     MatProgressSpinnerModule,
     MatMenuModule,
+    MatTooltipModule,
   ],
   templateUrl: './job-candidates.component.html',
   styleUrl: './job-candidates.component.scss',
@@ -60,8 +63,10 @@ export class JobCandidatesComponent implements OnInit {
   searchTerm = '';
   selectedStageFilter: CandidateFilter = 'All';
 
+  /** `actions` early so the ⋮ menu is visible without scrolling the full wide table. */
   displayedColumns = [
     'name',
+    'actions',
     'email',
     'stage',
     'assignedInterviewer',
@@ -69,7 +74,6 @@ export class JobCandidatesComponent implements OnInit {
     'feedback',
     'resume',
     'updated',
-    'actions',
   ];
   dataSource = new MatTableDataSource<JobCandidate>([]);
   allCandidates: JobCandidate[] = [];
@@ -225,7 +229,7 @@ export class JobCandidatesComponent implements OnInit {
       next: (interviewers) => {
         this.interviewers = interviewers.filter((user) => user.isActive);
         const dialogRef = this.dialog.open(AssignInterviewerDialogComponent, {
-          width: '560px',
+          width: '600px',
           maxWidth: '95vw',
           data: { interviewers: this.interviewers, candidateName: candidate.name },
         });
@@ -244,11 +248,38 @@ export class JobCandidatesComponent implements OnInit {
                 this.snackBar.open('Interviewer assigned.', 'Close', { duration: 2500 });
                 this.refresh();
               },
-              error: () => this.snackBar.open('Failed to assign interviewer.', 'Close', { duration: 4000 }),
+              error: (err: unknown) => {
+                let msg = 'Failed to assign interviewer.';
+                if (err instanceof HttpErrorResponse) {
+                  if (err.error && typeof err.error === 'object' && 'error' in err.error) {
+                    msg = String((err.error as { error: string }).error);
+                  } else if (err.status === 401) {
+                    msg = 'Session expired. Please sign in again.';
+                  } else if (err.status === 403) {
+                    msg = 'You do not have permission to assign interviews.';
+                  }
+                } else if (err instanceof Error && err.message) {
+                  msg = err.message;
+                }
+                this.snackBar.open(msg, 'Close', { duration: 6000 });
+              },
             });
         });
       },
-      error: () => this.snackBar.open('Failed to load interviewers.', 'Close', { duration: 4000 }),
+      error: (err: unknown) => {
+        let msg = 'Failed to load interviewers.';
+        if (err instanceof HttpErrorResponse) {
+          if (err.status === 403) {
+            msg =
+              'Your account cannot load the interviewer list. Sign in as a hiring manager or admin.';
+          } else if (err.status === 401) {
+            msg = 'Session expired. Please sign in again.';
+          } else if (err.error && typeof err.error === 'object' && 'error' in err.error) {
+            msg = String((err.error as { error: string }).error);
+          }
+        }
+        this.snackBar.open(msg, 'Close', { duration: 6000 });
+      },
     });
   }
 
@@ -256,6 +287,14 @@ export class JobCandidatesComponent implements OnInit {
     const rows = this.assignmentsByApplication[candidate.id] ?? [];
     if (rows.length === 0) return 'Unassigned';
     return rows.map((row) => row.interviewer?.name || `Interviewer #${row.interviewer_id}`).join(', ');
+  }
+
+  /** Truncate long resume paths for the table; full value in `[title]`. */
+  truncateResume(filename: string | undefined, maxChars = 36): string {
+    const s = (filename ?? '').trim();
+    if (!s) return '—';
+    if (s.length <= maxChars) return s;
+    return s.slice(0, maxChars - 1) + '…';
   }
 
   getInterviewStatus(candidate: JobCandidate): string {
@@ -271,7 +310,18 @@ export class JobCandidatesComponent implements OnInit {
     return (this.feedbackByApplication[candidate.id] ?? []).length > 0;
   }
 
+  /** At least one interview row exists for this application (assignment happened). */
+  hasInterviewAssignment(candidate: JobCandidate): boolean {
+    return (this.assignmentsByApplication[candidate.id] ?? []).length > 0;
+  }
+
   openFeedback(candidate: JobCandidate): void {
+    if (!this.hasInterviewAssignment(candidate)) {
+      this.snackBar.open('Assign an interviewer first; feedback is collected after an interview is scheduled.', 'Close', {
+        duration: 4500,
+      });
+      return;
+    }
     const feedback = this.feedbackByApplication[candidate.id] ?? [];
     this.dialog.open(FeedbackViewDialogComponent, {
       width: '640px',

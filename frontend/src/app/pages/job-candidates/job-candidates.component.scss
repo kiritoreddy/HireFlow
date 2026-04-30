@@ -92,7 +92,14 @@
   gap: 16px;
   justify-content: flex-end;
   align-items: flex-start;
-  margin-bottom: 18px;
+  margin-bottom: 10px;
+}
+
+.pipeline-hint {
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.45;
 }
 
 .search-field {
@@ -137,15 +144,45 @@
 }
 
 .table-wrap {
-  overflow: hidden;
-  border-radius: 16px;
+  overflow-x: auto;
+  overflow-y: visible;
+  border-radius: 12px;
   border: 1px solid #e5e7eb;
   background: #ffffff;
+  scrollbar-color: #cbd5e1 #f8fafc;
 }
 
 .candidates-table {
   width: 100%;
+  min-width: 880px;
   background: #fff;
+  table-layout: auto;
+}
+
+.candidates-table .mat-column-actions,
+.candidates-table .mat-mdc-cell.mat-column-actions,
+.candidates-table .mat-mdc-header-cell.mat-column-actions {
+  width: 56px;
+  min-width: 56px;
+  text-align: center;
+  padding-left: 4px !important;
+  padding-right: 8px !important;
+}
+
+.actions-cell {
+  vertical-align: middle;
+}
+
+.actions-header {
+  vertical-align: middle;
+}
+
+.actions-header-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9ca3af;
 }
 
 .candidates-table th {
@@ -160,7 +197,36 @@
 
 .candidates-table td,
 .candidates-table th {
-  padding: 16px 18px;
+  padding: 12px 14px;
+}
+
+.candidates-table .mat-column-email,
+.candidates-table .mat-mdc-cell.mat-column-email {
+  max-width: 220px;
+}
+
+.candidates-table .mat-column-email .email-link {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feedback-cell {
+  white-space: nowrap;
+}
+
+.feedback-cell .mat-mdc-outlined-button {
+  font-size: 13px;
+  min-width: auto;
+  padding: 0 12px;
+  height: 36px;
+}
+
+.feedback-na {
+  font-size: 13px;
+  color: #9ca3af;
+  font-weight: 500;
 }
 
 .candidates-table .mat-mdc-header-row,
@@ -183,10 +249,17 @@
   width: 150px;
 }
 
+.candidates-table .mat-column-resume,
+.candidates-table .mat-mdc-cell.mat-column-resume {
+  max-width: 200px;
+}
+
 .resume-link {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  max-width: 100%;
+  min-width: 0;
   text-decoration: none;
   color: #2563eb;
   font-size: 14px;
@@ -194,9 +267,36 @@
 }
 
 .resume-link mat-icon {
+  flex-shrink: 0;
   font-size: 17px;
   width: 17px;
   height: 17px;
+}
+
+.resume-filename {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.assigned-cell {
+  vertical-align: top;
+}
+
+.assigned-text {
+  font-size: 14px;
+  color: #374151;
+}
+
+.assign-inline-btn {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  min-height: 32px;
+  padding: 0 14px;
+  line-height: 1.2;
 }
 
 .no-data td {

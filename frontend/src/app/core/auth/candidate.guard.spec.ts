@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { Router, UrlTree, provideRouter } from '@angular/router';
-import { hiringOnlyGuard, candidateGuard } from './candidate.guard';
+import { hiringOnlyGuard, hiringManagerAdminGuard, candidateGuard } from './candidate.guard';
 import { AuthService } from './auth.service';
 import { vi } from 'vitest';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
@@ -46,6 +46,41 @@ describe('hiringOnlyGuard', () => {
   it('should redirect unauthenticated users to /login', () => {
     const result = runGuard(false, '');
     expect(result).not.toBe(true);
+  });
+});
+
+const runHmAdminGuard = (loggedIn: boolean, role: string) => {
+  const authSpy = makeAuth(loggedIn, role);
+  TestBed.configureTestingModule({
+    providers: [
+      provideRouter([]),
+      { provide: AuthService, useValue: authSpy },
+    ],
+  });
+  return TestBed.runInInjectionContext(() => hiringManagerAdminGuard(fakeRoute, fakeState));
+};
+
+describe('hiringManagerAdminGuard', () => {
+  afterEach(() => TestBed.resetTestingModule());
+
+  it('allows hiring_manager', () => {
+    expect(runHmAdminGuard(true, 'hiring_manager')).toBe(true);
+  });
+
+  it('allows admin', () => {
+    expect(runHmAdminGuard(true, 'admin')).toBe(true);
+  });
+
+  it('does not allow interviewer', () => {
+    expect(runHmAdminGuard(true, 'interviewer')).not.toBe(true);
+  });
+
+  it('does not allow candidate', () => {
+    expect(runHmAdminGuard(true, 'candidate')).not.toBe(true);
+  });
+
+  it('sends unauthenticated users to login', () => {
+    expect(runHmAdminGuard(false, '')).not.toBe(true);
   });
 });
 

@@ -6,7 +6,10 @@ import { CandidateStage, JobCandidate } from '../models/candidate.model';
 import { MyApplication } from '../models/my-application.model';
 
 interface BackendApplicationRow {
-  id: string | number;
+  /** Lowercase when API uses explicit `json:"id"`; often absent when row is raw `models.Application`. */
+  id?: string | number;
+  /** Go `gorm.Model` promotes `ID` with no json tag, so JSON uses `"ID"`. */
+  ID?: string | number;
   job_id: number;
   name?: string;
   email?: string;
@@ -14,10 +17,19 @@ interface BackendApplicationRow {
   stage?: string;
   status?: string;
   candidate?: {
+    id?: string | number;
+    ID?: string | number;
     name?: string;
     email?: string;
     resume_path?: string;
   };
+}
+
+function applicationRowId(r: BackendApplicationRow): string {
+  const v = r.id ?? r.ID;
+  if (v == null || v === '') return '';
+  const s = String(v);
+  return s === 'undefined' || s === 'NaN' ? '' : s;
 }
 
 interface BackendMyApplicationRow {
@@ -41,12 +53,17 @@ function mapRow(r: BackendApplicationRow): JobCandidate {
         : normalized === 'REJECTED'
           ? 'Rejected'
           : 'Applied';
+
+  const displayName = r.name || r.candidate?.name || 'Candidate';
+  const displayEmail = r.email || r.candidate?.email || 'unknown@email.com';
+  const resume = r.resume || r.candidate?.resume_path || '—';
+
   return {
-    id: String(r.id),
+    id: applicationRowId(r),
     jobId: r.job_id,
-    name: r.name || r.candidate?.name || 'Candidate',
-    email: r.email || r.candidate?.email || 'unknown@email.com',
-    resume: r.resume || r.candidate?.resume_path || '—',
+    name: displayName,
+    email: displayEmail,
+    resume,
     stage,
   };
 }

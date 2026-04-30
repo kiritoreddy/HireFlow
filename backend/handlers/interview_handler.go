@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -128,12 +129,14 @@ func (h *InterviewHandler) CreateInterview(w http.ResponseWriter, r *http.Reques
 	// Check for duplicate assignment — same interviewer already assigned to this application.
 	// Enforces uniqueness at service layer (DB composite index also enforces this).
 	var existing models.Interview
-	if err := h.DB.Where("application_id = ? AND interviewer_id = ?", req.ApplicationID, req.InterviewerID).
-		First(&existing).Error; err == nil {
+	dupErr := h.DB.Where("application_id = ? AND interviewer_id = ?", req.ApplicationID, req.InterviewerID).
+		First(&existing).Error
+	if dupErr == nil {
 		w.WriteHeader(http.StatusConflict)
 		json.NewEncoder(w).Encode(map[string]string{"error": "This interviewer is already assigned to this application"})
 		return
-	} else if err != gorm.ErrRecordNotFound {
+	}
+	if !errors.Is(dupErr, gorm.ErrRecordNotFound) {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to check existing assignment"})
 		return
@@ -147,7 +150,18 @@ func (h *InterviewHandler) CreateInterview(w http.ResponseWriter, r *http.Reques
 		Status:        "SCHEDULED",
 	}
 
-	if err := h.DB.Create(&interview).Error; err != nil {
+	if err := h.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(&interview).Error; err != nil {
+			return err
+		}
+		// Pipeline: first scheduled interview moves the application from Applied → Interview.
+		if strings.EqualFold(strings.TrimSpace(app.Status), "APPLIED") {
+			if err := tx.Model(&models.Application{}).Where("id = ?", app.ID).Update("status", "INTERVIEW").Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	}); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to create interview"})
 		return

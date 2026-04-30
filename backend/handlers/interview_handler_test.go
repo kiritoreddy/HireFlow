@@ -261,6 +261,13 @@ func TestCreateInterview_Success(t *testing.T) {
 	if result.Status != "SCHEDULED" {
 		t.Errorf("expected status SCHEDULED, got %s", result.Status)
 	}
+	var appAfter models.Application
+	if err := db.First(&appAfter, app.ID).Error; err != nil {
+		t.Fatalf("reload application: %v", err)
+	}
+	if appAfter.Status != "INTERVIEW" {
+		t.Errorf("expected application status INTERVIEW after assign, got %q", appAfter.Status)
+	}
 }
 
 func TestCreateInterview_DuplicateAssignmentBlocked(t *testing.T) {
@@ -310,6 +317,13 @@ func TestCreateInterview_PanelAllowed(t *testing.T) {
 	h.CreateInterview(rr, req)
 	if rr.Code != http.StatusCreated {
 		t.Errorf("expected 201 for panel interview (second interviewer), got %d — body: %s", rr.Code, rr.Body.String())
+	}
+	var appAfter models.Application
+	if err := db.First(&appAfter, app.ID).Error; err != nil {
+		t.Fatalf("reload application: %v", err)
+	}
+	if appAfter.Status != "INTERVIEW" {
+		t.Errorf("expected application status INTERVIEW after second assign, got %q", appAfter.Status)
 	}
 }
 

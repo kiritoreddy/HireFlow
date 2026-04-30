@@ -30,7 +30,8 @@ func SetupRoutes(db *gorm.DB) http.Handler {
 
 	// Admin user management (JWT + admin role required)
 	userHandler := &handlers.UserHandler{DB: db}
-	router.HandleFunc("/users", middleware.RequireAuth(middleware.RequireAdmin(userHandler.ListUsers))).Methods("GET")
+	// GET /users: admin lists all; hiring_manager may only list interviewers (?role=interviewer) for assignment UI
+	router.HandleFunc("/users", middleware.RequireAuth(userHandler.ListUsers)).Methods("GET")
 	router.HandleFunc("/users", middleware.RequireAuth(middleware.RequireAdmin(userHandler.CreateUser))).Methods("POST")
 	router.HandleFunc("/users/{id}", middleware.RequireAuth(middleware.RequireAdmin(userHandler.SetUserActive))).Methods("PATCH")
 
@@ -63,11 +64,15 @@ func SetupRoutes(db *gorm.DB) http.Handler {
 	// Apply to job (candidate only - creates or reuses candidate by email; JWT required)
 	router.HandleFunc("/api/candidate/apply", middleware.RequireAuth(candidateHandler.ApplyWithCandidate)).Methods("POST")
 
-	// List applications for a specific job (hiring pipeline view - hiring_manager/admin)
-	router.HandleFunc("/api/jobs/{jobId}/applications", candidateHandler.ListApplicationsByJob).Methods("GET")
+	// List applications for a specific job (hiring pipeline — hiring_manager/admin only)
+	router.HandleFunc("/api/jobs/{jobId}/applications",
+		middleware.RequireAuth(middleware.RequireRole("hiring_manager", "admin")(candidateHandler.ListApplicationsByJob)),
+	).Methods("GET")
 
 	// Update application stage (hiring_manager/admin only)
-	router.HandleFunc("/api/applications/{id}/stage", candidateHandler.UpdateApplicationStage).Methods("PATCH")
+	router.HandleFunc("/api/applications/{id}/stage",
+		middleware.RequireAuth(middleware.RequireRole("hiring_manager", "admin")(candidateHandler.UpdateApplicationStage)),
+	).Methods("PATCH")
 
 	// Candidate portal: list my applications (JWT required - candidate only)
 	router.HandleFunc("/api/candidate/my-applications", middleware.RequireAuth(candidateHandler.ListMyApplications)).Methods("GET")
@@ -92,6 +97,11 @@ func SetupRoutes(db *gorm.DB) http.Handler {
 	// List interviews — hiring_manager/admin see all (optional ?application_id filter); interviewer sees own
 	router.HandleFunc("/interviews",
 		middleware.RequireAuth(middleware.RequireRole("hiring_manager", "admin", "interviewer")(interviewHandler.ListInterviews)),
+	).Methods("GET")
+
+	// Sprint spec alias: interviewer’s assignment list (same handler as GET /interviews for interviewer role)
+	router.HandleFunc("/interviewer/assignments",
+		middleware.RequireAuth(middleware.RequireRole("interviewer")(interviewHandler.ListInterviews)),
 	).Methods("GET")
 
 	// Cancel interview — must be registered BEFORE /{id} to avoid path conflict
